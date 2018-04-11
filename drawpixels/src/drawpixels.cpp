@@ -199,7 +199,6 @@ static const luaL_reg Module_methods[] = {
 
 static void LuaInit(lua_State* L) {
   int top = lua_gettop(L);
-  // Register lua names
   luaL_register(L, MODULE_NAME, Module_methods);
   lua_pop(L, 1);
   assert(top == lua_gettop(L));
@@ -210,7 +209,6 @@ dmExtension::Result AppInitializeImpExtension(dmExtension::AppParams* params) {
 }
 
 dmExtension::Result InitializeImpExtension(dmExtension::Params* params) {
-  // Init Lua
   LuaInit(params->m_L);
   printf("Registered %s Extension\n", MODULE_NAME);
   return dmExtension::RESULT_OK;
@@ -223,10 +221,5 @@ dmExtension::Result AppFinalizeImpExtension(dmExtension::AppParams* params) {
 dmExtension::Result FinalizeImpExtension(dmExtension::Params* params) {
   return dmExtension::RESULT_OK;
 }
-
-
-// Defold SDK uses a macro for setting up extension entry points:
-//
-// DM_DECLARE_EXTENSION(symbol, name, app_init, app_final, init, update, on_event, final)
 
 DM_DECLARE_EXTENSION(DrawPixels, LIB_NAME, AppInitializeImpExtension, AppFinalizeImpExtension, InitializeImpExtension, 0, 0, FinalizeImpExtension)
