@@ -1,12 +1,27 @@
 name: "main"
 scale_along_z: 0
 embedded_instances {
-  id: "logo"
-  data: "embedded_components {\n"
+  id: "canvas"
+  data: "components {\n"
+  "  id: \"script\"\n"
+  "  component: \"/example/canvas.script\"\n"
+  "  position {\n"
+  "    x: 0.0\n"
+  "    y: 0.0\n"
+  "    z: 0.0\n"
+  "  }\n"
+  "  rotation {\n"
+  "    x: 0.0\n"
+  "    y: 0.0\n"
+  "    z: 0.0\n"
+  "    w: 1.0\n"
+  "  }\n"
+  "}\n"
+  "embedded_components {\n"
   "  id: \"sprite\"\n"
   "  type: \"sprite\"\n"
-  "  data: \"tile_set: \\\"/main/logo.atlas\\\"\\n"
-  "default_animation: \\\"logo\\\"\\n"
+  "  data: \"tile_set: \\\"/example/img.atlas\\\"\\n"
+  "default_animation: \\\"fullscreen\\\"\\n"
   "material: \\\"/builtins/materials/sprite.material\\\"\\n"
   "blend_mode: BLEND_MODE_ALPHA\\n"
   "\"\n"
@@ -24,8 +39,8 @@ embedded_instances {
   "}\n"
   ""
   position {
-    x: 640.0
-    y: 340.0
+    x: 256.0
+    y: 512.0
     z: 0.0
   }
   rotation {

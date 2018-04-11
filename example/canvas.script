@@ -1,0 +1,78 @@
+function init(self)
+  msg.post(".", "acquire_input_focus")
+
+  -- size of texture when scaled to nearest power of two
+  local width = 512
+  local height = 1024
+
+  local our_buffer = buffer.create(width * height, {{name = hash("rgba"), type = buffer.VALUE_TYPE_UINT8, count = 4}})
+
+  self.buffer_info = {
+    buffer = our_buffer,
+    width = width,
+    height = height,
+    colors_count = 4 --- 3 for rgb, 4 for rgba
+  }
+
+  drawpixels.fill(self.buffer_info, 128, 128, 128)
+  self.dirty = true
+
+  -- drawing params
+  self.prev_pos = vmath.vector3()
+  self.resource_path = go.get("#sprite", "texture0")
+  self.header = {
+    width = width,
+    height = height,
+    type = resource.TEXTURE_TYPE_2D,
+    format = resource.TEXTURE_FORMAT_RGBA,
+    num_mip_maps = 1
+  }
+end
+
+function update(self, dt)
+  -- update texture if it's dirty (ie we've drawn to it)
+  if self.dirty then
+    resource.set_texture(self.resource_path, self.header, self.buffer_info.buffer)
+    self.dirty = false
+  end
+end
+
+function on_input(self, action_id, action)
+  if action_id == hash("touch") then
+    local pos = vmath.vector3(action.x, action.y, 0)
+    if action.pressed then
+      self.drawing = true
+      self.touch_pos = pos
+    elseif action.released then
+      self.drawing = false
+    end
+    if self.drawing then
+      -- calculate the length and direction from the previous touch
+      -- position to the current position
+      local length = math.ceil(vmath.length(self.touch_pos - pos))
+      local dir = vmath.normalize(self.touch_pos - pos)
+      if length == 0 then
+        length = 1
+        dir = vmath.vector3(0)
+      end
+      if self.prev_pos == pos then
+        return false
+      end
+      self.prev_pos = self.touch_pos
+      -- use current tool from the previous touch position to
+      -- the current touch position0
+      while length > 0 do
+        drawpixels.rect(self.buffer_info, self.touch_pos.x, self.touch_pos.y, 40, 40, 255, 255, 255, 255)
+        -- drawpixels.circle(self.buffer_info, self.touch_pos.x, self.touch_pos.y, 120, 255, 255, 255, 255)
+        self.dirty = true
+        self.touch_pos = self.touch_pos - dir
+        length = length - 1
+      end
+    end
+  end
+end
+
+function on_reload(self)
+  -- Add reload-handling code here
+  -- Remove this function if not needed
+end
