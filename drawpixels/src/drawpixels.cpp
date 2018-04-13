@@ -13,6 +13,8 @@ struct BufferInfo
   int width;
   int height;
   int colors_count;
+  uint8_t* bytes;
+  uint32_t src_size;
 };
 
 BufferInfo buffer_info;
@@ -41,6 +43,11 @@ static void read_and_validate_buffer_info(lua_State* L, int index) {
   buffer_info.buffer = lua_buffer->m_Buffer;
 
   if (!dmBuffer::IsBufferValid(buffer_info.buffer)) {
+    luaL_error(L, "Buffer is invalid");
+  }
+
+  dmBuffer::Result result = dmBuffer::GetBytes(buffer_info.buffer, (void**)&buffer_info.bytes, &buffer_info.src_size);
+  if (result != dmBuffer::RESULT_OK) {
     luaL_error(L, "Buffer is invalid");
   }
 
@@ -76,14 +83,6 @@ static int draw_circle(lua_State* L) {
     a = luaL_checknumber(L, 5);
   }
 
-  uint8_t* bytes = 0;
-  uint32_t src_size = 0;
-
-  dmBuffer::Result result = dmBuffer::GetBytes(buffer_info.buffer, (void**)&bytes, &src_size);
-  if (result != dmBuffer::RESULT_OK) {
-    dmLogError("Unable to get bytes from source buffer");
-    return 0;
-  }
   int newposx = 0;
   int newposy = 0;
   int half_size = size/2;
@@ -93,11 +92,11 @@ static int draw_circle(lua_State* L) {
       newposy = y + posy;
       if (lenght(newposx, newposy, posx, posy) < half_size) {
         int i = xytoi(newposx, newposy, buffer_info.width, buffer_info.height, buffer_info.colors_count);
-        bytes[i] = r;
-        bytes[i + 1] = g;
-        bytes[i + 2] = b;
+        buffer_info.bytes[i] = r;
+        buffer_info.bytes[i + 1] = g;
+        buffer_info.bytes[i + 2] = b;
         if (buffer_info.colors_count == 4) {
-          bytes[i + 3] = a;
+          buffer_info.bytes[i + 3] = a;
         }
       }
     }
@@ -120,20 +119,12 @@ static int fill_texture(lua_State* L) {
     a = luaL_checknumber(L, 5);
   }
 
-  uint8_t* bytes = 0;
-  uint32_t src_size = 0;
-
-  dmBuffer::Result result = dmBuffer::GetBytes(buffer_info.buffer, (void**)&bytes, &src_size);
-  if (result != dmBuffer::RESULT_OK) {
-    dmLogError("Unable to get bytes from source buffer");
-    return 0;
-  }
-  for(int i = 0; i < src_size; i += buffer_info.colors_count) {
-    bytes[i] = r;
-    bytes[i + 1] = g;
-    bytes[i + 2] = b;
+  for(int i = 0; i < buffer_info.src_size; i += buffer_info.colors_count) {
+    buffer_info.bytes[i] = r;
+    buffer_info.bytes[i + 1] = g;
+    buffer_info.bytes[i + 2] = b;
     if (buffer_info.colors_count == 4) {
-      bytes[i + 3] = a;
+      buffer_info.bytes[i + 3] = a;
     }
   }
 
@@ -158,15 +149,6 @@ static int draw_rect(lua_State* L) {
     a = luaL_checknumber(L, 5);
   }
 
-  uint8_t* bytes = 0;
-  uint32_t src_size = 0;
-
-  dmBuffer::Result result = dmBuffer::GetBytes(buffer_info.buffer, (void**)&bytes, &src_size);
-  if (result != dmBuffer::RESULT_OK) {
-    dmLogError("Unable to get bytes from source buffer");
-    return 0;
-  }
-
   int half_size_x = sizex/2;
   int half_size_y = sizey/2;
   int newposx = 0;
@@ -176,11 +158,11 @@ static int draw_rect(lua_State* L) {
       newposx = x + posx;
       newposy = y + posy;
       int i = xytoi(newposx, newposy, buffer_info.width, buffer_info.height, buffer_info.colors_count);
-      bytes[i] = r;
-      bytes[i + 1] = g;
-      bytes[i + 2] = b;
+      buffer_info.bytes[i] = r;
+      buffer_info.bytes[i + 1] = g;
+      buffer_info.bytes[i + 2] = b;
       if (buffer_info.colors_count == 4) {
-        bytes[i + 3] = a;
+        buffer_info.bytes[i + 3] = a;
       }
     }
   }
