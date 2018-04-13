@@ -12,7 +12,7 @@ Open your game.project file and in the dependencies field under project add:
 >https://github.com/AGulev/drawpixels/archive/master.zip
 
 ## Example
-![screenshot](https://user-images.githubusercontent.com/2209596/38733478-44af253c-3f22-11e8-8e5f-f9d00434bba1.jpg | width=500)
+![screenshot](https://user-images.githubusercontent.com/2209596/38735063-fd1bbbc6-3f27-11e8-9ea3-3b80475b777d.jpg)
 
 Main code example is [here](https://github.com/AGulev/drawpixels/blob/master/example/canvas.script)
 
