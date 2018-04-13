@@ -12,7 +12,7 @@ struct BufferInfo
   dmBuffer::HBuffer buffer;
   int width;
   int height;
-  int colors_count;
+  int chanels;
   uint8_t* bytes;
   uint32_t src_size;
 };
@@ -24,7 +24,7 @@ static int xytoi(int x, int y) {
   if (y < 0) y = 0;
   if (x >= buffer_info.width) x = buffer_info.width - 1;
   if (y >= buffer_info.height) y = buffer_info.height - 1;
-  return (y * buffer_info.width * buffer_info.colors_count) + (x * buffer_info.colors_count);
+  return (y * buffer_info.width * buffer_info.chanels) + (x * buffer_info.chanels);
 }
 
 static void read_and_validate_buffer_info(lua_State* L, int index) {
@@ -32,7 +32,7 @@ static void read_and_validate_buffer_info(lua_State* L, int index) {
   lua_getfield(L, index, "buffer");
   lua_getfield(L, index, "width");
   lua_getfield(L, index, "height");
-  lua_getfield(L, index, "colors_count");
+  lua_getfield(L, index, "chanels");
   dmScript::LuaHBuffer *lua_buffer = dmScript::CheckBuffer(L, -4);
   buffer_info.buffer = lua_buffer->m_Buffer;
 
@@ -55,9 +55,9 @@ static void read_and_validate_buffer_info(lua_State* L, int index) {
     luaL_error(L, "'height' of the buffer should be an integer and > 0");
   }
 
-  buffer_info.colors_count = lua_tointeger(L, -1);
-  if (buffer_info.colors_count == 0) {
-    luaL_error(L, "'colors_count' of the buffer should be an integer and > 0");
+  buffer_info.chanels = lua_tointeger(L, -1);
+  if (buffer_info.chanels == 0) {
+    luaL_error(L, "'chanels' of the buffer should be an integer and > 0");
   }
 }
 
@@ -66,7 +66,7 @@ static void putpixel(int x, int y, int r, int g,int b, int a){
   buffer_info.bytes[i] = r;
   buffer_info.bytes[i + 1] = g;
   buffer_info.bytes[i + 2] = b;
-  if (buffer_info.colors_count == 4) {
+  if (buffer_info.chanels == 4) {
     buffer_info.bytes[i + 3] = a;
   }
 }
@@ -76,7 +76,7 @@ static void fill_line(int from, int to, int r, int g,int b, int a ){
     buffer_info.bytes[i] = r;
     buffer_info.bytes[i + 1] = g;
     buffer_info.bytes[i + 2] = b;
-    if (buffer_info.colors_count == 4) {
+    if (buffer_info.chanels == 4) {
       buffer_info.bytes[i + 3] = a;
     }
   }
@@ -149,6 +149,7 @@ static int draw_filled_circle(lua_State* L) {
   {
     a = luaL_checknumber(L, 8);
   }
+
   int radius = diametr/2;
   int x = radius-1;
   int y = 0;
@@ -195,11 +196,11 @@ static int fill_texture(lua_State* L) {
     a = luaL_checknumber(L, 5);
   }
 
-  for(int i = 0; i < buffer_info.src_size; i += buffer_info.colors_count) {
+  for(int i = 0; i < buffer_info.src_size; i += buffer_info.chanels) {
     buffer_info.bytes[i] = r;
     buffer_info.bytes[i + 1] = g;
     buffer_info.bytes[i + 2] = b;
-    if (buffer_info.colors_count == 4) {
+    if (buffer_info.chanels == 4) {
       buffer_info.bytes[i + 3] = a;
     }
   }
@@ -237,7 +238,7 @@ static int draw_rect(lua_State* L) {
       buffer_info.bytes[i] = r;
       buffer_info.bytes[i + 1] = g;
       buffer_info.bytes[i + 2] = b;
-      if (buffer_info.colors_count == 4) {
+      if (buffer_info.chanels == 4) {
         buffer_info.bytes[i + 3] = a;
       }
     }
