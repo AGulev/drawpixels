@@ -12,9 +12,9 @@ Open your game.project file and in the dependencies field under project add:
 >https://github.com/AGulev/drawpixels/archive/master.zip
 
 ## Example
-![screenshot](https://user-images.githubusercontent.com/2209596/38733478-44af253c-3f22-11e8-8e5f-f9d00434bba1.jpg)
+![screenshot](https://user-images.githubusercontent.com/2209596/38733478-44af253c-3f22-11e8-8e5f-f9d00434bba1.jpg | width=500)
 
-Main example code is [here](https://github.com/AGulev/drawpixels/blob/master/example/canvas.script)
+Main code example is [here](https://github.com/AGulev/drawpixels/blob/master/example/canvas.script)
 
 ## LUA Api
 First of all you need to create a table with a buffer information that contain next fields:
