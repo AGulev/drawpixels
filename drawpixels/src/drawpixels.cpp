@@ -140,7 +140,7 @@ static int draw_filled_circle(lua_State* L) {
   read_and_validate_buffer_info(L, 1);
   uint32_t posx = luaL_checknumber(L, 2);
   uint32_t posy = luaL_checknumber(L, 3);
-  uint32_t diametr = luaL_checknumber(L, 4);
+  uint32_t diameter = luaL_checknumber(L, 4);
   uint32_t r = luaL_checknumber(L, 5);
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
@@ -150,7 +150,7 @@ static int draw_filled_circle(lua_State* L) {
     a = luaL_checknumber(L, 8);
   }
 
-  int radius = diametr/2;
+  int radius = diameter/2;
   int x = radius-1;
   int y = 0;
   int dx = 1;
