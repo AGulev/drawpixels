@@ -1,0 +1,30 @@
+images {
+  image: "/example/images/gimp-tool-eraser_bw.png"
+}
+images {
+  image: "/example/images/gimp-tool-pencil_bw.png"
+}
+images {
+  image: "/example/images/logo.png"
+}
+images {
+  image: "/example/images/metalPanel_green.png"
+}
+images {
+  image: "/example/images/transparent1px.png"
+}
+images {
+  image: "/example/images/circle.png"
+}
+images {
+  image: "/example/images/filled_circle.png"
+}
+images {
+  image: "/example/images/rect.png"
+}
+images {
+  image: "/example/images/filled_rect.png"
+}
+margin: 0
+extrude_borders: 2
+inner_padding: 0
