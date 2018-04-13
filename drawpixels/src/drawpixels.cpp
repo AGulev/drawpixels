@@ -78,9 +78,9 @@ static int draw_circle(lua_State* L) {
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
   uint32_t a = 0;
-  if (lua_isnumber(L, 5) == 1)
+  if (lua_isnumber(L, 8) == 1)
   {
-    a = luaL_checknumber(L, 5);
+    a = luaL_checknumber(L, 8);
   }
 
   int newposx = 0;
@@ -144,9 +144,9 @@ static int draw_rect(lua_State* L) {
   uint32_t g = luaL_checknumber(L, 7);
   uint32_t b = luaL_checknumber(L, 8);
   uint32_t a = 0;
-  if (lua_isnumber(L, 5) == 1)
+  if (lua_isnumber(L, 9) == 1)
   {
-    a = luaL_checknumber(L, 5);
+    a = luaL_checknumber(L, 9);
   }
 
   int half_size_x = sizex/2;
