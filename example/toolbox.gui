@@ -33,7 +33,7 @@ nodes {
     w: 1.0
   }
   size {
-    x: 440.0
+    x: 460.0
     y: 140.0
     z: 0.0
     w: 1.0
@@ -69,7 +69,7 @@ nodes {
 }
 nodes {
   position {
-    x: 86.738
+    x: 100.738
     y: 0.0
     z: 0.0
     w: 1.0
@@ -674,7 +674,7 @@ nodes {
 }
 nodes {
   position {
-    x: -60.804
+    x: -46.804
     y: 10.711
     z: 0.0
     w: 1.0
@@ -729,7 +729,7 @@ nodes {
 }
 nodes {
   position {
-    x: -60.804
+    x: -46.804
     y: -34.704
     z: 0.0
     w: 1.0
@@ -784,8 +784,8 @@ nodes {
 }
 nodes {
   position {
-    x: -119.0
-    y: 9.0
+    x: -105.0
+    y: 10.0
     z: 0.0
     w: 1.0
   }
@@ -902,8 +902,8 @@ nodes {
 }
 nodes {
   position {
-    x: -102.804
-    y: -34.289
+    x: -200.0
+    y: 10.0
     z: 0.0
     w: 1.0
   }
@@ -957,8 +957,8 @@ nodes {
 }
 nodes {
   position {
-    x: -140.804
-    y: -34.289
+    x: -120.0
+    y: -35.0
     z: 0.0
     w: 1.0
   }
@@ -1012,8 +1012,8 @@ nodes {
 }
 nodes {
   position {
-    x: -180.804
-    y: -34.289
+    x: -160.0
+    y: -35.0
     z: 0.0
     w: 1.0
   }
@@ -1067,8 +1067,8 @@ nodes {
 }
 nodes {
   position {
-    x: -182.804
-    y: 7.711
+    x: -160.0
+    y: 10.0
     z: 0.0
     w: 1.0
   }
@@ -1100,6 +1100,61 @@ nodes {
   blend_mode: BLEND_MODE_ALPHA
   texture: "draw_pixels/rect"
   id: "rect"
+  xanchor: XANCHOR_NONE
+  yanchor: YANCHOR_NONE
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  parent: "toolbox"
+  layer: ""
+  inherit_alpha: true
+  slice9 {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 0.0
+  }
+  clipping_mode: CLIPPING_MODE_NONE
+  clipping_visible: true
+  clipping_inverted: false
+  alpha: 1.0
+  template_node_child: false
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -200.0
+    y: -35.0
+    z: 0.0
+    w: 1.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+    w: 1.0
+  }
+  size {
+    x: 24.0
+    y: 24.0
+    z: 0.0
+    w: 1.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+    w: 1.0
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  texture: "draw_pixels/rotated_rect"
+  id: "rotated_rect"
   xanchor: XANCHOR_NONE
   yanchor: YANCHOR_NONE
   pivot: PIVOT_CENTER

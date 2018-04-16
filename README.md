@@ -12,7 +12,7 @@ Open your game.project file and in the dependencies field under project add:
 >https://github.com/AGulev/drawpixels/archive/master.zip
 
 ## Example
-![screenshot](https://user-images.githubusercontent.com/2209596/38735063-fd1bbbc6-3f27-11e8-9ea3-3b80475b777d.jpg)
+![screenshot](https://user-images.githubusercontent.com/2209596/38828895-1dc0802e-41c0-11e8-87c1-20fd65cb017f.jpg)
 
 Main code example is [here](https://github.com/AGulev/drawpixels/blob/master/example/canvas.script)
 
@@ -99,7 +99,7 @@ Method for drawing rectangle:
 `blue` - blue channel of the color 0..255
 
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures
-#### drawpixels.filled_rect(buffer_info, pos_x, pos_y, rect_width, rect_height, red, green, blue, alpha)
+#### drawpixels.filled_rect(buffer_info, pos_x, pos_y, rect_width, rect_height, red, green, blue, alpha, angle)
 Method for drawing filled rectangle:
 
 `buffer_info` - buffer information
@@ -119,6 +119,8 @@ Method for drawing filled rectangle:
 `blue` - blue channel of the color 0..255
 
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures
+
+`angle` - rotation angle in degrees. Optional.
 #### drawpixels.fill(buffer_info, red, green, blue, alpha)
 Fill buffer with the color:
 

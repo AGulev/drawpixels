@@ -25,6 +25,9 @@ images {
 images {
   image: "/example/images/filled_rect.png"
 }
+images {
+  image: "/example/images/rotated_rect.png"
+}
 margin: 0
 extrude_borders: 2
 inner_padding: 0
