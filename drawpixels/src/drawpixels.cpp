@@ -3,6 +3,7 @@
 #define MODULE_NAME "drawpixels"
 
 #define DLIB_LOG_DOMAIN LIB_NAME
+#define M_PI 3.14159265358979323846
 
 #include <dmsdk/sdk.h>
 #include <math.h>
