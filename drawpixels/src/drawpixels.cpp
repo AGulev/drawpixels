@@ -144,6 +144,40 @@ static void read_and_validate_buffer_info(lua_State* L, int index) {
   }
 }
 
+static int draw_line(lua_State* L) {
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x0 = luaL_checknumber(L, 2);
+  int32_t y0 = luaL_checknumber(L, 3);
+  int32_t x1 = luaL_checknumber(L, 4);
+  int32_t y1 = luaL_checknumber(L, 5);
+  uint32_t r = luaL_checknumber(L, 6);
+  uint32_t g = luaL_checknumber(L, 7);
+  uint32_t b = luaL_checknumber(L, 8);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 9) == 1)
+  {
+    a = luaL_checknumber(L, 9);
+  }
+
+  // https://gist.github.com/bert/1085538#file-plot_line-c
+  int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
+  int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
+  int err = dx + dy, e2; /* error value e_xy */
+
+  for (;;){  /* loop */
+    putpixel(x0, y0, r, g, b, a);
+    if (x0 == x1 && y0 == y1) break;
+    e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
+    if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
+  }
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 //https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 static int draw_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
@@ -388,6 +422,7 @@ static int draw_filled_rect(lua_State* L) {
 
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
+  {"line", draw_line},
   {"circle", draw_circle},
   {"filled_circle", draw_filled_circle},
   {"fill", fill_texture},
