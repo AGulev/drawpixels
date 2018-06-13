@@ -438,22 +438,22 @@ static void LuaInit(lua_State* L) {
   assert(top == lua_gettop(L));
 }
 
-dmExtension::Result AppInitializeImpExtension(dmExtension::AppParams* params) {
+dmExtension::Result AppInitializeDrawPixelsExtension(dmExtension::AppParams* params) {
   return dmExtension::RESULT_OK;
 }
 
-dmExtension::Result InitializeImpExtension(dmExtension::Params* params) {
+dmExtension::Result InitializeDrawPixelsExtension(dmExtension::Params* params) {
   LuaInit(params->m_L);
   printf("Registered %s Extension\n", MODULE_NAME);
   return dmExtension::RESULT_OK;
 }
 
-dmExtension::Result AppFinalizeImpExtension(dmExtension::AppParams* params) {
+dmExtension::Result AppFinalizeDrawPixelsExtension(dmExtension::AppParams* params) {
   return dmExtension::RESULT_OK;
 }
 
-dmExtension::Result FinalizeImpExtension(dmExtension::Params* params) {
+dmExtension::Result FinalizeDrawPixelsExtension(dmExtension::Params* params) {
   return dmExtension::RESULT_OK;
 }
 
-DM_DECLARE_EXTENSION(DrawPixels, LIB_NAME, AppInitializeImpExtension, AppFinalizeImpExtension, InitializeImpExtension, 0, 0, FinalizeImpExtension)
+DM_DECLARE_EXTENSION(DrawPixels, LIB_NAME, AppInitializeDrawPixelsExtension, AppFinalizeDrawPixelsExtension, InitializeDrawPixelsExtension, 0, 0, FinalizeDrawPixelsExtension)
