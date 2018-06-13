@@ -56,19 +56,14 @@ static void putpixel(int x, int y, int r, int g,int b, int a) {
   }
 }
 
-static void fill_line(int from, int to, int r, int g, int b, int a){
-  if (from > to) {
-    int temp = from;
-    from = to;
-    to = temp;
+static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
+  if (fromx > tox) {
+    int temp = fromx;
+    fromx = tox;
+    tox = temp;
   }
-  for (int i = from; i <= to; i += buffer_info.channels) {
-    buffer_info.bytes[i] = r;
-    buffer_info.bytes[i + 1] = g;
-    buffer_info.bytes[i + 2] = b;
-    if (buffer_info.channels == 4) {
-      buffer_info.bytes[i + 3] = a;
-    }
+  for (int x = fromx; x <= tox; x++) {
+    putpixel(x, y, r, g, b, a);
   }
 }
 
@@ -80,7 +75,7 @@ static void fillBottomFlatTriangle(int x1, int y1, int x2, int y2, int x3, int y
   float curx1 = x1;
   float curx2 = x1;
   for (int scanlineY = y1; scanlineY <= y2; scanlineY++) {
-    fill_line(xytoi(curx1, scanlineY), xytoi(curx2, scanlineY), r, g, b, a);
+    fill_line(curx1, curx2, scanlineY, r, g, b, a);
     curx1 += invslope1;
     curx2 += invslope2;
   }
@@ -93,7 +88,7 @@ static void fillTopFlatTriangle(int x1, int y1, int x2, int y2, int x3, int y3, 
   float curx1 = x3;
   float curx2 = x3;
   for (int scanlineY = y3; scanlineY > y1; scanlineY--) {
-    fill_line(xytoi(curx1, scanlineY), xytoi(curx2, scanlineY), r, g, b, a);
+    fill_line(curx1, curx2, scanlineY, r, g, b, a);
     curx1 -= invslope1;
     curx2 -= invslope2;
   }
@@ -263,10 +258,6 @@ static int draw_filled_circle(lua_State* L) {
   int err = dx - (radius << 1);
   while (x >= y)
   {
-    fill_line(xytoi(posx - x, posy + y), xytoi(posx + x, posy + y), r, g, b, a);
-    fill_line(xytoi(posx - y, posy + x), xytoi(posx + y, posy + x), r, g, b, a);
-    fill_line(xytoi(posx - x, posy - y), xytoi(posx + x, posy - y), r, g, b, a);
-    fill_line(xytoi(posx - y, posy - x), xytoi(posx + y, posy - x), r, g, b, a);
 
     if (err <= 0)
     {
@@ -274,6 +265,10 @@ static int draw_filled_circle(lua_State* L) {
       err += dy;
       dy += 2;
     }
+      fill_line(posx - x, posx + x, posy + y, r, g, b, a);
+      fill_line(posx - y, posx + y, posy + x, r, g, b, a);
+      fill_line(posx - x, posx + x, posy - y, r, g, b, a);
+      fill_line(posx - y, posx + y, posy - x, r, g, b, a);
 
     if (err > 0)
     {
