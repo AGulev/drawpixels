@@ -338,13 +338,7 @@ static int draw_rect(lua_State* L) {
       for(int x = -half_size_x; x < half_size_x; x++) {
         newposx = x + posx;
         newposy = y + posy;
-        int i = xytoi(newposx, newposy);
-        buffer_info.bytes[i] = r;
-        buffer_info.bytes[i + 1] = g;
-        buffer_info.bytes[i + 2] = b;
-        if (buffer_info.channels == 4) {
-          buffer_info.bytes[i + 3] = a;
-        }
+        putpixel(newposx, newposy, r, g, b, a);
       }
     }
     else
@@ -393,13 +387,7 @@ static int draw_filled_rect(lua_State* L) {
       for(int y = -half_size_y; y < half_size_y; y++) {
         newposx = x + posx;
         newposy = y + posy;
-        int i = xytoi(newposx, newposy);
-        buffer_info.bytes[i] = r;
-        buffer_info.bytes[i + 1] = g;
-        buffer_info.bytes[i + 2] = b;
-        if (buffer_info.channels == 4) {
-          buffer_info.bytes[i + 3] = a;
-        }
+        putpixel(newposx, newposy, r, g, b, a);
       }
     }
   }
