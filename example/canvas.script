@@ -49,6 +49,11 @@ function on_message(self, message_id, message, sender)
     end
   elseif message_id == hash("change_tool") then
     self.current_tool = message.tool
+    if message.tool == "line" then
+      self.last_pos = 1
+    else
+      self.last_pos = nil
+    end
   elseif message_id == hash("clear") then
     drawpixels.fill(self.buffer_info, 0, 0, 0, 0)
     self.dirty = true
@@ -67,6 +72,12 @@ function on_input(self, action_id, action)
       self.touch_pos = pos
     elseif action.released then
       self.drawing = false
+      if self.last_pos and self.last_pos == 1 then
+        self.last_pos = {}
+      elseif self.last_pos then
+        self.last_pos.x = pos.x
+        self.last_pos.y = pos.y
+      end
     end
     if self.drawing then
       -- calculate the length and direction from the previous touch
@@ -89,6 +100,8 @@ function on_input(self, action_id, action)
           drawpixels.filled_rect(self.buffer_info, self.touch_pos.x, self.touch_pos.y, 4, 4, r, g, b, a)
         elseif self.current_tool == "circle" then
           drawpixels.circle(self.buffer_info, self.touch_pos.x, self.touch_pos.y, 40, r, g, b, a)
+        elseif self.current_tool == "line" and self.last_pos and next(self.last_pos) then
+          drawpixels.line(self.buffer_info, self.last_pos.x, self.last_pos.y, self.touch_pos.x, self.touch_pos.y, r, g, b, a)
         elseif self.current_tool == "filled_circle" then
           drawpixels.filled_circle(self.buffer_info, self.touch_pos.x, self.touch_pos.y, 40, r, g, b, a)
         elseif self.current_tool == "rect" then

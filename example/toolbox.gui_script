@@ -30,6 +30,10 @@ local function use_rotated_rect()
   msg.post("canvas", "change_tool", { tool = "rotated_rect" })
 end
 
+local function use_line()
+  msg.post("canvas", "change_tool", { tool = "line" })
+end
+
 local function clear()
   msg.post("canvas", "clear")
 end
@@ -46,6 +50,7 @@ function init(self)
   self.nodes[gui.get_node("rect")] = use_rect
   self.nodes[gui.get_node("filled_rect")] = use_filled_rect
   self.nodes[gui.get_node("rotated_rect")] = use_rotated_rect
+  self.nodes[gui.get_node("line")] = use_line
   for i = 1, 10 do
     self.nodes[gui.get_node("color" .. i)] = pick_color
   end

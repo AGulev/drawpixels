@@ -28,6 +28,9 @@ images {
 images {
   image: "/example/images/rotated_rect.png"
 }
+images {
+  image: "/example/images/line.png"
+}
 margin: 0
 extrude_borders: 2
 inner_padding: 0
