@@ -29,6 +29,10 @@ struct Point
   int y;
 };
 
+static int in_buffer(int x, int y) {
+  return (x >= 0) && (y >= 0) && (x < buffer_info.width) && (y < buffer_info.height);
+}
+
 static int xytoi(int x, int y) {
   if (x < 0) x = 0;
   if (y < 0) y = 0;
@@ -37,7 +41,12 @@ static int xytoi(int x, int y) {
   return (y * buffer_info.width * buffer_info.channels) + (x * buffer_info.channels);
 }
 
-static void putpixel(int x, int y, int r, int g,int b, int a){
+static void putpixel(int x, int y, int r, int g,int b, int a) {
+  // ignore the pixel if it's outside the area of the buffer
+  if (!in_buffer(x, y)) {
+    return;
+  }
+
   int i = xytoi(x, y);
   buffer_info.bytes[i] = r;
   buffer_info.bytes[i + 1] = g;
