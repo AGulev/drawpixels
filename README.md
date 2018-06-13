@@ -16,7 +16,7 @@ Open your game.project file and in the dependencies field under project add:
 
 Main code example is [here](https://github.com/AGulev/drawpixels/blob/master/example/canvas.script)
 
-## LUA Api
+## Lua API
 First of all you need to create a table with a buffer information that contain next fields:
 
 `buffer` - buffer
@@ -61,6 +61,7 @@ Method for drawing circle:
 `blue` - blue channel of the color 0..255
 
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures
+
 #### drawpixels.filled_circle(buffer_info, pos_x, pos_y, diameter, red, green, blue, alpha)
 Method for drawing filled circle:
 
@@ -79,6 +80,7 @@ Method for drawing filled circle:
 `blue` - blue channel of the color 0..255
 
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures
+
 #### drawpixels.rect(buffer_info, pos_x, pos_y, rect_width, rect_height, red, green, blue, alpha)
 Method for drawing rectangle:
 
@@ -99,6 +101,7 @@ Method for drawing rectangle:
 `blue` - blue channel of the color 0..255
 
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures
+
 #### drawpixels.filled_rect(buffer_info, pos_x, pos_y, rect_width, rect_height, red, green, blue, alpha, angle)
 Method for drawing filled rectangle:
 
@@ -121,10 +124,32 @@ Method for drawing filled rectangle:
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures
 
 `angle` - rotation angle in degrees. Optional.
+
 #### drawpixels.fill(buffer_info, red, green, blue, alpha)
 Fill buffer with the color:
 
 `buffer_info` - buffer information
+
+`red` - red channel of the color 0..255
+
+`green` - green channel of the color 0..255
+
+`blue` - blue channel of the color 0..255
+
+`alpha` - alpha channel 0..255. Optional parameter for rgba textures
+
+#### drawpixels.line(buffer_info, x0, y0, x1, y1, red, green, blue, alpha)
+Draw a line between two points:
+
+`buffer_info` - buffer information
+
+`x0` - x position of one end of the line
+
+`y0` - y position of one end of the line
+
+`x1` - x position of the other end of the line
+
+`y1` - y position of the other end of the line
 
 `red` - red channel of the color 0..255
 

@@ -29,6 +29,10 @@ struct Point
   int y;
 };
 
+static int in_buffer(int x, int y) {
+  return (x >= 0) && (y >= 0) && (x < buffer_info.width) && (y < buffer_info.height);
+}
+
 static int xytoi(int x, int y) {
   if (x < 0) x = 0;
   if (y < 0) y = 0;
@@ -37,7 +41,12 @@ static int xytoi(int x, int y) {
   return (y * buffer_info.width * buffer_info.channels) + (x * buffer_info.channels);
 }
 
-static void putpixel(int x, int y, int r, int g,int b, int a){
+static void putpixel(int x, int y, int r, int g,int b, int a) {
+  // ignore the pixel if it's outside the area of the buffer
+  if (!in_buffer(x, y)) {
+    return;
+  }
+
   int i = xytoi(x, y);
   buffer_info.bytes[i] = r;
   buffer_info.bytes[i + 1] = g;
@@ -47,19 +56,14 @@ static void putpixel(int x, int y, int r, int g,int b, int a){
   }
 }
 
-static void fill_line(int from, int to, int r, int g, int b, int a){
-  if (from > to) {
-    int temp = from;
-    from = to;
-    to = temp;
+static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
+  if (fromx > tox) {
+    int temp = fromx;
+    fromx = tox;
+    tox = temp;
   }
-  for (int i = from; i <= to; i += buffer_info.channels) {
-    buffer_info.bytes[i] = r;
-    buffer_info.bytes[i + 1] = g;
-    buffer_info.bytes[i + 2] = b;
-    if (buffer_info.channels == 4) {
-      buffer_info.bytes[i + 3] = a;
-    }
+  for (int x = fromx; x <= tox; x++) {
+    putpixel(x, y, r, g, b, a);
   }
 }
 
@@ -71,7 +75,7 @@ static void fillBottomFlatTriangle(int x1, int y1, int x2, int y2, int x3, int y
   float curx1 = x1;
   float curx2 = x1;
   for (int scanlineY = y1; scanlineY <= y2; scanlineY++) {
-    fill_line(xytoi(curx1, scanlineY), xytoi(curx2, scanlineY), r, g, b, a);
+    fill_line(curx1, curx2, scanlineY, r, g, b, a);
     curx1 += invslope1;
     curx2 += invslope2;
   }
@@ -84,7 +88,7 @@ static void fillTopFlatTriangle(int x1, int y1, int x2, int y2, int x3, int y3, 
   float curx1 = x3;
   float curx2 = x3;
   for (int scanlineY = y3; scanlineY > y1; scanlineY--) {
-    fill_line(xytoi(curx1, scanlineY), xytoi(curx2, scanlineY), r, g, b, a);
+    fill_line(curx1, curx2, scanlineY, r, g, b, a);
     curx1 -= invslope1;
     curx2 -= invslope2;
   }
@@ -144,14 +148,48 @@ static void read_and_validate_buffer_info(lua_State* L, int index) {
   }
 }
 
+static int draw_line(lua_State* L) {
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x0 = luaL_checknumber(L, 2);
+  int32_t y0 = luaL_checknumber(L, 3);
+  int32_t x1 = luaL_checknumber(L, 4);
+  int32_t y1 = luaL_checknumber(L, 5);
+  uint32_t r = luaL_checknumber(L, 6);
+  uint32_t g = luaL_checknumber(L, 7);
+  uint32_t b = luaL_checknumber(L, 8);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 9) == 1)
+  {
+    a = luaL_checknumber(L, 9);
+  }
+
+  // https://gist.github.com/bert/1085538#file-plot_line-c
+  int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
+  int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
+  int err = dx + dy, e2; /* error value e_xy */
+
+  for (;;){  /* loop */
+    putpixel(x0, y0, r, g, b, a);
+    if (x0 == x1 && y0 == y1) break;
+    e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
+    if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
+  }
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 //https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 static int draw_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
-  uint32_t radius = luaL_checknumber(L, 4);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
   uint32_t r = luaL_checknumber(L, 5);
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
@@ -160,35 +198,39 @@ static int draw_circle(lua_State* L) {
   {
     a = luaL_checknumber(L, 8);
   }
-  int x = radius-1;
-  int y = 0;
-  int dx = 1;
-  int dy = 1;
-  int err = dx - (radius << 1);
 
-  while (x >= y)
-  {
-    putpixel(posx + x, posy + y, r, g, b, a);
-    putpixel(posx + y, posy + x, r, g, b, a);
-    putpixel(posx - y, posy + x, r, g, b, a);
-    putpixel(posx - x, posy + y, r, g, b, a);
-    putpixel(posx - x, posy - y, r, g, b, a);
-    putpixel(posx - y, posy - x, r, g, b, a);
-    putpixel(posx + y, posy - x, r, g, b, a);
-    putpixel(posx + x, posy - y, r, g, b, a);
+  if (diameter > 0) {
+    int radius = diameter/2;
+    int x = radius-1;
+    int y = 0;
+    int dx = 1;
+    int dy = 1;
+    int err = dx - (radius << 1);
 
-    if (err <= 0)
+    while (x >= y)
     {
-      y++;
-      err += dy;
-      dy += 2;
-    }
+      putpixel(posx + x, posy + y, r, g, b, a);
+      putpixel(posx + y, posy + x, r, g, b, a);
+      putpixel(posx - y, posy + x, r, g, b, a);
+      putpixel(posx - x, posy + y, r, g, b, a);
+      putpixel(posx - x, posy - y, r, g, b, a);
+      putpixel(posx - y, posy - x, r, g, b, a);
+      putpixel(posx + y, posy - x, r, g, b, a);
+      putpixel(posx + x, posy - y, r, g, b, a);
 
-    if (err > 0)
-    {
-      x--;
-      dx += 2;
-      err += dx - (radius << 1);
+      if (err <= 0)
+      {
+        y++;
+        err += dy;
+        dy += 2;
+      }
+
+      if (err > 0)
+      {
+        x--;
+        dx += 2;
+        err += dx - (radius << 1);
+      }
     }
   }
 
@@ -200,9 +242,9 @@ static int draw_filled_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
-  uint32_t diameter = luaL_checknumber(L, 4);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
   uint32_t r = luaL_checknumber(L, 5);
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
@@ -212,31 +254,33 @@ static int draw_filled_circle(lua_State* L) {
     a = luaL_checknumber(L, 8);
   }
 
-  int radius = diameter/2;
-  int x = radius-1;
-  int y = 0;
-  int dx = 1;
-  int dy = 1;
-  int err = dx - (radius << 1);
-  while (x >= y)
-  {
-    fill_line(xytoi(posx - x, posy + y), xytoi(posx + x, posy + y), r, g, b, a);
-    fill_line(xytoi(posx - y, posy + x), xytoi(posx + y, posy + x), r, g, b, a);
-    fill_line(xytoi(posx - x, posy - y), xytoi(posx + x, posy - y), r, g, b, a);
-    fill_line(xytoi(posx - y, posy - x), xytoi(posx + y, posy - x), r, g, b, a);
-
-    if (err <= 0)
+  if(diameter > 0) {
+    int radius = diameter/2;
+    int x = radius-1;
+    int y = 0;
+    int dx = 1;
+    int dy = 1;
+    int err = dx - (radius << 1);
+    while (x >= y)
     {
-      y++;
-      err += dy;
-      dy += 2;
-    }
+      fill_line(posx - x, posx + x, posy + y, r, g, b, a);
+      fill_line(posx - y, posx + y, posy + x, r, g, b, a);
+      fill_line(posx - x, posx + x, posy - y, r, g, b, a);
+      fill_line(posx - y, posx + y, posy - x, r, g, b, a);
 
-    if (err > 0)
-    {
-      x--;
-      dx += 2;
-      err += dx - (radius << 1);
+      if (err <= 0)
+      {
+        y++;
+        err += dy;
+        dy += 2;
+      }
+
+      if (err > 0)
+      {
+        x--;
+        dx += 2;
+        err += dx - (radius << 1);
+      }
     }
   }
 
@@ -273,8 +317,8 @@ static int draw_rect(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
   uint32_t sizex = luaL_checknumber(L, 4);
   uint32_t sizey = luaL_checknumber(L, 5);
   uint32_t r = luaL_checknumber(L, 6);
@@ -295,13 +339,7 @@ static int draw_rect(lua_State* L) {
       for(int x = -half_size_x; x < half_size_x; x++) {
         newposx = x + posx;
         newposy = y + posy;
-        int i = xytoi(newposx, newposy);
-        buffer_info.bytes[i] = r;
-        buffer_info.bytes[i + 1] = g;
-        buffer_info.bytes[i + 2] = b;
-        if (buffer_info.channels == 4) {
-          buffer_info.bytes[i + 3] = a;
-        }
+        putpixel(newposx, newposy, r, g, b, a);
       }
     }
     else
@@ -323,8 +361,8 @@ static int draw_filled_rect(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
   uint32_t sizex = luaL_checknumber(L, 4);
   uint32_t sizey = luaL_checknumber(L, 5);
   uint32_t r = luaL_checknumber(L, 6);
@@ -350,13 +388,7 @@ static int draw_filled_rect(lua_State* L) {
       for(int y = -half_size_y; y < half_size_y; y++) {
         newposx = x + posx;
         newposy = y + posy;
-        int i = xytoi(newposx, newposy);
-        buffer_info.bytes[i] = r;
-        buffer_info.bytes[i + 1] = g;
-        buffer_info.bytes[i + 2] = b;
-        if (buffer_info.channels == 4) {
-          buffer_info.bytes[i + 3] = a;
-        }
+        putpixel(newposx, newposy, r, g, b, a);
       }
     }
   }
@@ -388,6 +420,7 @@ static int draw_filled_rect(lua_State* L) {
 
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
+  {"line", draw_line},
   {"circle", draw_circle},
   {"filled_circle", draw_filled_circle},
   {"fill", fill_texture},
@@ -403,22 +436,22 @@ static void LuaInit(lua_State* L) {
   assert(top == lua_gettop(L));
 }
 
-dmExtension::Result AppInitializeImpExtension(dmExtension::AppParams* params) {
+dmExtension::Result AppInitializeDrawPixelsExtension(dmExtension::AppParams* params) {
   return dmExtension::RESULT_OK;
 }
 
-dmExtension::Result InitializeImpExtension(dmExtension::Params* params) {
+dmExtension::Result InitializeDrawPixelsExtension(dmExtension::Params* params) {
   LuaInit(params->m_L);
   printf("Registered %s Extension\n", MODULE_NAME);
   return dmExtension::RESULT_OK;
 }
 
-dmExtension::Result AppFinalizeImpExtension(dmExtension::AppParams* params) {
+dmExtension::Result AppFinalizeDrawPixelsExtension(dmExtension::AppParams* params) {
   return dmExtension::RESULT_OK;
 }
 
-dmExtension::Result FinalizeImpExtension(dmExtension::Params* params) {
+dmExtension::Result FinalizeDrawPixelsExtension(dmExtension::Params* params) {
   return dmExtension::RESULT_OK;
 }
 
-DM_DECLARE_EXTENSION(DrawPixels, LIB_NAME, AppInitializeImpExtension, AppFinalizeImpExtension, InitializeImpExtension, 0, 0, FinalizeImpExtension)
+DM_DECLARE_EXTENSION(DrawPixels, LIB_NAME, AppInitializeDrawPixelsExtension, AppFinalizeDrawPixelsExtension, InitializeDrawPixelsExtension, 0, 0, FinalizeDrawPixelsExtension)
