@@ -187,9 +187,9 @@ static int draw_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
   uint32_t radius = luaL_checknumber(L, 4);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
   uint32_t r = luaL_checknumber(L, 5);
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
@@ -238,9 +238,9 @@ static int draw_filled_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
   uint32_t diameter = luaL_checknumber(L, 4);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
   uint32_t r = luaL_checknumber(L, 5);
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
@@ -311,8 +311,8 @@ static int draw_rect(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
   uint32_t sizex = luaL_checknumber(L, 4);
   uint32_t sizey = luaL_checknumber(L, 5);
   uint32_t r = luaL_checknumber(L, 6);
@@ -355,8 +355,8 @@ static int draw_filled_rect(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t posx = luaL_checknumber(L, 2);
-  uint32_t posy = luaL_checknumber(L, 3);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
   uint32_t sizex = luaL_checknumber(L, 4);
   uint32_t sizey = luaL_checknumber(L, 5);
   uint32_t r = luaL_checknumber(L, 6);
