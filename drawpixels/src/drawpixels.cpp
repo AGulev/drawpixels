@@ -187,9 +187,9 @@ static int draw_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t radius = luaL_checknumber(L, 4);
   int32_t posx = luaL_checknumber(L, 2);
   int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
   uint32_t r = luaL_checknumber(L, 5);
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
@@ -198,35 +198,39 @@ static int draw_circle(lua_State* L) {
   {
     a = luaL_checknumber(L, 8);
   }
-  int x = radius-1;
-  int y = 0;
-  int dx = 1;
-  int dy = 1;
-  int err = dx - (radius << 1);
 
-  while (x >= y)
-  {
-    putpixel(posx + x, posy + y, r, g, b, a);
-    putpixel(posx + y, posy + x, r, g, b, a);
-    putpixel(posx - y, posy + x, r, g, b, a);
-    putpixel(posx - x, posy + y, r, g, b, a);
-    putpixel(posx - x, posy - y, r, g, b, a);
-    putpixel(posx - y, posy - x, r, g, b, a);
-    putpixel(posx + y, posy - x, r, g, b, a);
-    putpixel(posx + x, posy - y, r, g, b, a);
+  if (diameter > 0) {
+    int radius = diameter/2;
+    int x = radius-1;
+    int y = 0;
+    int dx = 1;
+    int dy = 1;
+    int err = dx - (radius << 1);
 
-    if (err <= 0)
+    while (x >= y)
     {
-      y++;
-      err += dy;
-      dy += 2;
-    }
+      putpixel(posx + x, posy + y, r, g, b, a);
+      putpixel(posx + y, posy + x, r, g, b, a);
+      putpixel(posx - y, posy + x, r, g, b, a);
+      putpixel(posx - x, posy + y, r, g, b, a);
+      putpixel(posx - x, posy - y, r, g, b, a);
+      putpixel(posx - y, posy - x, r, g, b, a);
+      putpixel(posx + y, posy - x, r, g, b, a);
+      putpixel(posx + x, posy - y, r, g, b, a);
 
-    if (err > 0)
-    {
-      x--;
-      dx += 2;
-      err += dx - (radius << 1);
+      if (err <= 0)
+      {
+        y++;
+        err += dy;
+        dy += 2;
+      }
+
+      if (err > 0)
+      {
+        x--;
+        dx += 2;
+        err += dx - (radius << 1);
+      }
     }
   }
 
@@ -238,9 +242,9 @@ static int draw_filled_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t diameter = luaL_checknumber(L, 4);
   int32_t posx = luaL_checknumber(L, 2);
   int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
   uint32_t r = luaL_checknumber(L, 5);
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
@@ -250,31 +254,33 @@ static int draw_filled_circle(lua_State* L) {
     a = luaL_checknumber(L, 8);
   }
 
-  int radius = diameter/2;
-  int x = radius-1;
-  int y = 0;
-  int dx = 1;
-  int dy = 1;
-  int err = dx - (radius << 1);
-  while (x >= y)
-  {
-
-    if (err <= 0)
+  if(diameter > 0) {
+    int radius = diameter/2;
+    int x = radius-1;
+    int y = 0;
+    int dx = 1;
+    int dy = 1;
+    int err = dx - (radius << 1);
+    while (x >= y)
     {
-      y++;
-      err += dy;
-      dy += 2;
-    }
       fill_line(posx - x, posx + x, posy + y, r, g, b, a);
       fill_line(posx - y, posx + y, posy + x, r, g, b, a);
       fill_line(posx - x, posx + x, posy - y, r, g, b, a);
       fill_line(posx - y, posx + y, posy - x, r, g, b, a);
 
-    if (err > 0)
-    {
-      x--;
-      dx += 2;
-      err += dx - (radius << 1);
+      if (err <= 0)
+      {
+        y++;
+        err += dy;
+        dy += 2;
+      }
+
+      if (err > 0)
+      {
+        x--;
+        dx += 2;
+        err += dx - (radius << 1);
+      }
     }
   }
 
