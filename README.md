@@ -159,6 +159,42 @@ Draw a line between two points:
 
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures
 
+#### drawpixels.pixel(buffer_info, x, y, red, green, blue, alpha)
+Draw a pixel:
+
+`buffer_info` - buffer information
+
+`x` - x position of pixel
+
+`y` - y position of pixel
+
+`red` - red channel of the color 0..255
+
+`green` - green channel of the color 0..255
+
+`blue` - blue channel of the color 0..255
+
+`alpha` - alpha channel 0..255. Optional parameter for rgba textures
+
+#### drawpixels.color(buffer_info, x, y)
+Read color from a position in the buffer:
+
+`buffer_info` - buffer information
+
+`x` - x position to get color from
+
+`y` - y position to get color from
+
+RETURNS:
+
+`red` - red channel of the color 0..255
+
+`green` - green channel of the color 0..255
+
+`blue` - blue channel of the color 0..255
+
+`alpha` - alpha channel 0..255. Optional parameter for rgba textures
+
 --------
 
 If you have any questions or suggestions contact me: me@agulev.com

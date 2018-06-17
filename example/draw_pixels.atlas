@@ -31,6 +31,9 @@ images {
 images {
   image: "/example/images/line.png"
 }
+images {
+  image: "/example/images/gimp-tool-color-picker.png"
+}
 margin: 0
 extrude_borders: 2
 inner_padding: 0

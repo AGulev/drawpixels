@@ -182,6 +182,50 @@ static int draw_line(lua_State* L) {
   return 0;
 }
 
+static int draw_pixel(lua_State* L) {
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x = luaL_checknumber(L, 2);
+  int32_t y = luaL_checknumber(L, 3);
+  uint32_t r = luaL_checknumber(L, 4);
+  uint32_t g = luaL_checknumber(L, 5);
+  uint32_t b = luaL_checknumber(L, 6);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 7) == 1)
+  {
+    a = luaL_checknumber(L, 7);
+  }
+
+  putpixel(x, y, r, g, b, a);
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
+static int read_color(lua_State* L) {
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x = luaL_checknumber(L, 2);
+  int32_t y = luaL_checknumber(L, 3);
+
+  if (!in_buffer(x, y)) {
+    assert(top == lua_gettop(L));
+    return 0;
+  }
+
+  int i = xytoi(x, y);
+  lua_pushnumber(L, buffer_info.bytes[i]);
+  lua_pushnumber(L, buffer_info.bytes[i + 1]);
+  lua_pushnumber(L, buffer_info.bytes[i + 2]);
+  if (buffer_info.channels == 4) {
+    lua_pushnumber(L, buffer_info.bytes[i + 3]);
+  }
+  assert(top + buffer_info.channels == lua_gettop(L));
+  return buffer_info.channels;
+}
+
 //https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 static int draw_circle(lua_State* L) {
   int top = lua_gettop(L) + 4;
@@ -426,6 +470,8 @@ static const luaL_reg Module_methods[] = {
   {"fill", fill_texture},
   {"rect", draw_rect},
   {"filled_rect", draw_filled_rect},
+  {"pixel", draw_pixel},
+  {"color", read_color},
   {0, 0}
 };
 
