@@ -336,23 +336,28 @@ static int fill_texture(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
   read_and_validate_buffer_info(L, 1);
-  uint32_t r = luaL_checknumber(L, 2);
-  uint32_t g = luaL_checknumber(L, 3);
-  uint32_t b = luaL_checknumber(L, 4);
-  uint32_t a = 0;
+  uint8_t r = luaL_checknumber(L, 2);
+  uint8_t g = luaL_checknumber(L, 3);
+  uint8_t b = luaL_checknumber(L, 4);
+  uint8_t a = 0;
   if (lua_isnumber(L, 5) == 1)
   {
     a = luaL_checknumber(L, 5);
   }
-  for(int i = 0; i < buffer_info.src_size; i += buffer_info.channels) {
-    buffer_info.bytes[i] = r;
-    buffer_info.bytes[i + 1] = g;
-    buffer_info.bytes[i + 2] = b;
+  int line_size = buffer_info.width*buffer_info.channels;
+  uint8_t* line = new uint8_t[line_size];
+  for (int i=0; i<line_size; i +=buffer_info.channels){
+    line[i] = r;
+    line[i + 1] = g;
+    line[i + 2] = b;
     if (buffer_info.channels == 4) {
-      buffer_info.bytes[i + 3] = a;
+      line[i + 3] = a;
     }
   }
-
+  for(int i = 0; i < buffer_info.src_size; i +=line_size) {
+    memcpy(&buffer_info.bytes[i], line, line_size);
+  }
+  delete line;
   assert(top == lua_gettop(L));
   return 0;
 }

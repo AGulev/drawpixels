@@ -1,0 +1,57 @@
+function init(self)
+  msg.post(".", "acquire_input_focus")
+  msg.post("@system:", "toggle_profile")
+  msg.post("@render:", "clear_color", {color = vmath.vector4(1, 1, 1, 1)})
+  -- size of texture when scaled to nearest power of two
+  local width = 1024
+  local height = 2048
+  local channels = 4
+  -- we have to create table with next fields: buffer, width, height, channels
+  self.buffer_info = {
+    buffer = buffer.create(width * height, {{name = hash("rgba"), type = buffer.VALUE_TYPE_UINT8, count = channels}}),
+    width = width,
+    height = height,
+    channels = channels -- 3 for rgb, 4 for rgba
+  }
+  self.dirty = true
+  self.current_color = vmath.vector4(0, 0, 0, 1)
+  self.current_tool = "pencil"
+  -- drawing params
+  self.prev_pos = vmath.vector3()
+  self.resource_path = go.get("#sprite", "texture0")
+  self.header = {
+    width = width,
+    height = height,
+    type = resource.TEXTURE_TYPE_2D,
+    format = resource.TEXTURE_FORMAT_RGBA,
+    num_mip_maps = 1
+  }
+end
+
+local function mesure_time(self, times, fun, ...)
+  local time = os.clock()
+  for i=1, times do
+    fun(self, ...)
+  end
+  print("time:" .. os.clock() - time)
+end  
+
+local function fill(self)
+  drawpixels.fill(self.buffer_info, 255,0,0,0)
+end
+
+function update(self, dt)
+  mesure_time(self, 100, fill)
+    resource.set_texture(self.resource_path, self.header, self.buffer_info.buffer)
+end
+
+function on_message(self, message_id, message, sender)
+end
+
+local function color_vector_to_bytes(color)
+  return color.x * 255, color.y * 255, color.z * 255, color.w * 255
+end
+
+local function bytes_to_color_vector(r, g, b, a)
+  return vmath.vector4(r / 255, g / 255, b / 255, a / 255)
+end
