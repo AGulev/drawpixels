@@ -62,9 +62,33 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
     fromx = tox;
     tox = temp;
   }
-  for (int x = fromx; x <= tox; x++) {
-    putpixel(x, y, r, g, b, a);
+  fromx = max(0, fromx);
+  tox = min(buffer_info.width-1, tox);
+  int size = 10;
+  //prepare line for memcpy
+  int line_size = 10*buffer_info.channels;
+  uint8_t* line = new uint8_t[line_size];
+  for (int i=0; i<line_size; i +=buffer_info.channels){
+    line[i] = r;
+    line[i + 1] = g;
+    line[i + 2] = b;
+    if (buffer_info.channels == 4) {
+      line[i + 3] = a;
+    }
   }
+  int start = xytoi(fromx, y);
+  int end = xytoi(tox, y);
+  int width = (end - start+buffer_info.channels);
+  for(int i = start; i < end; i +=line_size) {
+    if(width >= line_size){
+      memcpy(&buffer_info.bytes[i], line, line_size);
+    }else{
+      memcpy(&buffer_info.bytes[i], line, width);
+    }
+    width = width - line_size;
+  }
+  //delete line;
+ 
 }
 
 //http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html

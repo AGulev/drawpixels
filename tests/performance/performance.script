@@ -39,9 +39,12 @@ end
 local function fill(self)
   drawpixels.fill(self.buffer_info, 255,0,0,0)
 end
+local function circle(self)
+  drawpixels.filled_circle(self.buffer_info, 222,222,400,255,0,0,255)
+end
 
 function update(self, dt)
-  mesure_time(self, 100, fill)
+  mesure_time(self, 1000, circle)
     resource.set_texture(self.resource_path, self.header, self.buffer_info.buffer)
 end
 
