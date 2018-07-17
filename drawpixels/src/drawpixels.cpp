@@ -62,8 +62,8 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
     fromx = tox;
     tox = temp;
   }
-  fromx = max(0, fromx);
-  tox = min(buffer_info.width-1, tox);
+  fromx = fmax(0, fromx);
+  tox = fmin(buffer_info.width-1, tox);
   int size = 10;
   //prepare line for memcpy
   int line_size = 10*buffer_info.channels;
@@ -87,7 +87,7 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
     }
     width = width - line_size;
   }
-  delete line;
+  delete[] line;
  
 }
 
@@ -381,7 +381,7 @@ static int fill_texture(lua_State* L) {
   for(int i = 0; i < buffer_info.src_size; i +=line_size) {
     memcpy(&buffer_info.bytes[i], line, line_size);
   }
-  delete line;
+  delete[] line;
   assert(top == lua_gettop(L));
   return 0;
 }
