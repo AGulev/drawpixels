@@ -87,7 +87,7 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
     }
     width = width - line_size;
   }
-  //delete line;
+  delete line;
  
 }
 
