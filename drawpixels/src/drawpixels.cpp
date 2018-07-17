@@ -457,12 +457,10 @@ static int draw_filled_rect(lua_State* L) {
   if (angle == 0) {
     int newposx = 0;
     int newposy = 0;
-    for(int x = -half_size_x; x < half_size_x; x++) {
-      for(int y = -half_size_y; y < half_size_y; y++) {
-        newposx = x + posx;
-        newposy = y + posy;
-        putpixel(newposx, newposy, r, g, b, a);
-      }
+    for(int y = -half_size_y; y < half_size_y; y++) {
+     newposy = y + posy;
+      fill_line(posx-half_size_x,posx+half_size_x,newposy,r,g,b,a);
+
     }
   }
   else{
