@@ -68,7 +68,7 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
   //prepare line for memcpy
   int line_size = 10*buffer_info.channels;
   uint8_t* line = new uint8_t[line_size];
-  for (int i=0; i<line_size; i +=buffer_info.channels){
+  for (int i=0; i<line_size; i +=buffer_info.channels) {
     line[i] = r;
     line[i + 1] = g;
     line[i + 2] = b;
@@ -80,7 +80,7 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
   int end = xytoi(tox, y);
   int width = (end - start+buffer_info.channels);
   for(int i = start; i < end; i +=line_size) {
-    if(width >= line_size){
+    if(width >= line_size) {
       memcpy(&buffer_info.bytes[i], line, line_size);
     }else{
       memcpy(&buffer_info.bytes[i], line, width);
@@ -88,7 +88,6 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a){
     width = width - line_size;
   }
   delete[] line;
- 
 }
 
 //http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
@@ -191,10 +190,10 @@ static int draw_line(lua_State* L) {
 
   // https://gist.github.com/bert/1085538#file-plot_line-c
   int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
-  int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
+  int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1;
   int err = dx + dy, e2; /* error value e_xy */
 
-  for (;;){  /* loop */
+  for (;;) {  /* loop */
     putpixel(x0, y0, r, g, b, a);
     if (x0 == x1 && y0 == y1) break;
     e2 = 2 * err;
@@ -370,7 +369,7 @@ static int fill_texture(lua_State* L) {
   }
   int line_size = buffer_info.width*buffer_info.channels;
   uint8_t* line = new uint8_t[line_size];
-  for (int i=0; i<line_size; i +=buffer_info.channels){
+  for (int i=0; i<line_size; i +=buffer_info.channels) {
     line[i] = r;
     line[i + 1] = g;
     line[i + 2] = b;
@@ -426,8 +425,9 @@ static int draw_rect(lua_State* L) {
   return 0;
 }
 
-bool sortByY(const Point &f, const Point &t){
-  return (f.y < t.y);
+bool sortCoords(const Point &p1, const Point &p2){
+  if (p1.y == p2.y) return p1.x < p2.x;
+  return p1.y < p2.y;
 }
 
 static int draw_filled_rect(lua_State* L) {
@@ -458,7 +458,7 @@ static int draw_filled_rect(lua_State* L) {
     int newposx = 0;
     int newposy = 0;
     for(int y = -half_size_y; y < half_size_y; y++) {
-     newposy = y + posy;
+      newposy = y + posy;
       fill_line(posx-half_size_x,posx+half_size_x,newposy,r,g,b,a);
 
     }
@@ -480,7 +480,7 @@ static int draw_filled_rect(lua_State* L) {
       vec[i].x += posx;
       vec[i].y += posy;
     }
-    sort(vec.begin(),vec.end(), sortByY);
+    sort(vec.begin(),vec.end(), sortCoords);
     drawTriangle(vec[0].x, vec[0].y, vec[1].x, vec[1].y, vec[2].x, vec[2].y, r, g, b, a);
     drawTriangle(vec[1].x, vec[1].y, vec[2].x, vec[2].y, vec[3].x, vec[3].y, r, g, b, a);
   }
