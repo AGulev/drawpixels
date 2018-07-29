@@ -446,7 +446,7 @@ static int draw_filled_rect(lua_State* L) {
   {
     a = luaL_checknumber(L, 9);
   }
-  uint32_t angle = 0;
+  int angle = 0;
   if (lua_isnumber(L, 10) == 1)
   {
     angle = luaL_checknumber(L, 10);
