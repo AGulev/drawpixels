@@ -18,5 +18,7 @@ function drawpixels.line(buffer_info, x0, y0, x1, y1, red, green, blue, alpha) e
 function drawpixels.pixel(buffer_info, x, y, red, green, blue, alpha) end
 ---Read color from a position in the buffer:
 function drawpixels.color(buffer_info, x, y) end
+---Draw a bezier line between two points and one control point:
+function drawpixels.line(buffer_info, x0, y0, xc, yc, x1, y1, red, green, blue, alpha) end
 
 return

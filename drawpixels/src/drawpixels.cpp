@@ -489,6 +489,44 @@ static int draw_filled_rect(lua_State* L) {
   return 0;
 }
 
+static int draw_bezier(lua_State* L) {
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x0 = luaL_checknumber(L, 2);
+  int32_t y0 = luaL_checknumber(L, 3);
+  int32_t xc = luaL_checknumber(L, 4);
+  int32_t yc = luaL_checknumber(L, 5);
+  int32_t x1 = luaL_checknumber(L, 6);
+  int32_t y1 = luaL_checknumber(L, 7);
+  uint32_t r = luaL_checknumber(L, 8);
+  uint32_t g = luaL_checknumber(L, 9);
+  uint32_t b = luaL_checknumber(L, 10);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 11) == 1)
+  {
+    a = luaL_checknumber(L, 11);
+  }
+  
+  int max_dx = fmax(fmax(x0, xc), x1) - fmin(fmin(x0, xc), x1);
+  int max_dy = fmax(fmax(y0, yc), y1) - fmin(fmin(y0, yc), y1);
+  
+  int max_d = max(max_dx, max_dy) *2;
+  double dt = 1.0/max_d;
+  
+  for (double t = 0; t<1; t+=dt){
+    double opt1 = pow((1-t), 2);
+    double opt2 = 2*t*(1-t);
+    double opt3 = pow(t,2);
+    int xt = (opt1*x0)+(opt2*xc)+(opt3*x1);
+    int yt = (opt1*y0)+(opt2*yc)+(opt3*y1);
+    putpixel(xt, yt, r, g, b, a);
+  }
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
   {"line", draw_line},
@@ -499,6 +537,7 @@ static const luaL_reg Module_methods[] = {
   {"filled_rect", draw_filled_rect},
   {"pixel", draw_pixel},
   {"color", read_color},
+  {"bezier", draw_bezier},
   {0, 0}
 };
 
