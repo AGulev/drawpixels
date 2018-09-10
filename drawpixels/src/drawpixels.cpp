@@ -511,7 +511,7 @@ static int draw_bezier(lua_State* L) {
   int max_dx = fmax(fmax(x0, xc), x1) - fmin(fmin(x0, xc), x1);
   int max_dy = fmax(fmax(y0, yc), y1) - fmin(fmin(y0, yc), y1);
   
-  int max_d = max(max_dx, max_dy) *2;
+  double max_d = max(max_dx, max_dy) *2;
   double dt = 1.0/max_d;
   
   for (double t = 0; t<1; t+=dt){
