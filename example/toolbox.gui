@@ -33,7 +33,7 @@ nodes {
     w: 1.0
   }
   size {
-    x: 460.0
+    x: 480.0
     y: 140.0
     z: 0.0
     w: 1.0
@@ -674,7 +674,7 @@ nodes {
 }
 nodes {
   position {
-    x: -64.0
+    x: -39.0
     y: 10.711
     z: 0.0
     w: 1.0
@@ -729,7 +729,7 @@ nodes {
 }
 nodes {
   position {
-    x: -64.0
+    x: -39.0
     y: -34.704
     z: 0.0
     w: 1.0
@@ -784,7 +784,7 @@ nodes {
 }
 nodes {
   position {
-    x: -133.0
+    x: -142.0
     y: 10.0
     z: 0.0
     w: 1.0
@@ -902,7 +902,7 @@ nodes {
 }
 nodes {
   position {
-    x: -200.0
+    x: -209.0
     y: 10.0
     z: 0.0
     w: 1.0
@@ -957,7 +957,7 @@ nodes {
 }
 nodes {
   position {
-    x: -133.0
+    x: -142.0
     y: -35.0
     z: 0.0
     w: 1.0
@@ -1012,7 +1012,7 @@ nodes {
 }
 nodes {
   position {
-    x: -167.0
+    x: -176.0
     y: -35.0
     z: 0.0
     w: 1.0
@@ -1067,7 +1067,7 @@ nodes {
 }
 nodes {
   position {
-    x: -167.0
+    x: -176.0
     y: 10.0
     z: 0.0
     w: 1.0
@@ -1122,7 +1122,7 @@ nodes {
 }
 nodes {
   position {
-    x: -200.0
+    x: -209.0
     y: -35.0
     z: 0.0
     w: 1.0
@@ -1177,7 +1177,7 @@ nodes {
 }
 nodes {
   position {
-    x: -99.0
+    x: -108.0
     y: -35.0
     z: 0.0
     w: 1.0
@@ -1232,7 +1232,7 @@ nodes {
 }
 nodes {
   position {
-    x: -99.0
+    x: -73.0
     y: 10.711
     z: 0.0
     w: 1.0
@@ -1265,6 +1265,61 @@ nodes {
   blend_mode: BLEND_MODE_ALPHA
   texture: "draw_pixels/gimp-tool-color-picker"
   id: "colorpicker"
+  xanchor: XANCHOR_NONE
+  yanchor: YANCHOR_NONE
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  parent: "toolbox"
+  layer: ""
+  inherit_alpha: true
+  slice9 {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 0.0
+  }
+  clipping_mode: CLIPPING_MODE_NONE
+  clipping_visible: true
+  clipping_inverted: false
+  alpha: 1.0
+  template_node_child: false
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -108.0
+    y: 10.0
+    z: 0.0
+    w: 1.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+    w: 1.0
+  }
+  size {
+    x: 24.0
+    y: 24.0
+    z: 0.0
+    w: 1.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+    w: 1.0
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  texture: "draw_pixels/bezier"
+  id: "bezier"
   xanchor: XANCHOR_NONE
   yanchor: YANCHOR_NONE
   pivot: PIVOT_CENTER
