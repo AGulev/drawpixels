@@ -29,6 +29,45 @@ struct Point
   int y;
 };
 
+struct FloatPoint
+{
+  float x;
+  float y;
+};
+
+static FloatPoint basis(const FloatPoint &p1, const FloatPoint &p2){
+  FloatPoint fp;
+  fp.x = p2.x-p1.x;
+  fp.y = p2.y-p1.y;
+  return fp;
+}
+
+static float length(const FloatPoint &p){
+  return sqrt(p.x*p.x+p.y*p.y);
+}
+
+static FloatPoint normalize(const FloatPoint &p){
+  FloatPoint fp;
+  float len = length(p);
+  fp.x = p.x/len;
+  fp.y = p.y/len;
+  return fp;
+}
+
+static FloatPoint rotate_left(const FloatPoint &p){
+  FloatPoint p2_new;
+  p2_new.x = -p.y;
+  p2_new.y = p.x;
+  return p2_new;
+}
+
+static FloatPoint rotate_right(const FloatPoint &p){
+  FloatPoint p2_new;
+  p2_new.x = p.y;
+  p2_new.y = -p.x;
+  return p2_new;
+}
+
 static int in_buffer(int x, int y) {
   return (x >= 0) && (y >= 0) && (x < buffer_info.width) && (y < buffer_info.height);
 }
@@ -430,6 +469,11 @@ bool sortCoords(const Point &p1, const Point &p2){
   return p1.y < p2.y;
 }
 
+bool sortFloatCoords(const FloatPoint &p1, const FloatPoint &p2){
+  if (p1.y == p2.y) return p1.x < p2.x;
+  return p1.y < p2.y;
+}
+
 static int draw_filled_rect(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
@@ -489,6 +533,22 @@ static int draw_filled_rect(lua_State* L) {
   return 0;
 }
 
+
+static int draw_polygon(FloatPoint &p0, FloatPoint &p1, FloatPoint &p2, FloatPoint &p3, int r, int g, int b, int a) {
+  std::vector<FloatPoint> vec(4);
+
+  vec[0] = p0;
+  vec[1] = p1;
+  vec[2] = p2;
+  vec[3] = p3;
+
+  sort(vec.begin(),vec.end(), sortFloatCoords);
+  drawTriangle(vec[0].x, vec[0].y, vec[1].x, vec[1].y, vec[2].x, vec[2].y, r, g, b, a);
+  drawTriangle(vec[1].x, vec[1].y, vec[2].x, vec[2].y, vec[3].x, vec[3].y, r, g, b, a);
+
+  return 0; 
+}
+
 static int draw_bezier(lua_State* L) {
   int top = lua_gettop(L) + 4;
 
@@ -507,21 +567,90 @@ static int draw_bezier(lua_State* L) {
   {
     a = luaL_checknumber(L, 11);
   }
-  
-  int max_dx = fmax(fmax(x0, xc), x1) - fmin(fmin(x0, xc), x1);
-  int max_dy = fmax(fmax(y0, yc), y1) - fmin(fmin(y0, yc), y1);
-  
-  double max_d = fmax(max_dx, max_dy) *2;
-  double dt = 1.0/max_d;
-  
-  for (double t = 0; t<1; t+=dt){
+  double offset = 1.5;
+  if (lua_isnumber(L, 12) == 1)
+  {
+    offset = luaL_checknumber(L, 12);
+  }
+
+  double size = offset/2.0;
+
+  double dt = 0.01;
+
+  FloatPoint prew, curr, next, left_pr, right_pr, left_cr, right_cr, norm, init;
+
+  prew.x = x0;
+  prew.y = y0;
+
+  curr.x = x0;
+  curr.y = y0;
+
+  init.x = xc;
+  init.y = yc;
+
+  next.x = x0;
+  next.y = y0;
+
+  norm = normalize(basis(prew, init));
+
+  left_cr = rotate_left(norm);
+  left_cr.x = (left_cr.x * size) + curr.x;
+  left_cr.y = (left_cr.y * size) + curr.y;
+
+  right_cr = rotate_right(norm);
+  right_cr.x = (right_cr.x * size) + curr.x;
+  right_cr.y = (right_cr.y * size) + curr.y;
+
+
+  for (double t = dt; t<1; t+=dt){
+    
+    left_pr = left_cr;
+    right_pr = right_cr;
+    prew = curr;
+    curr = next;
+
     double opt1 = pow((1-t), 2);
     double opt2 = 2*t*(1-t);
     double opt3 = pow(t,2);
-    int xt = (opt1*x0)+(opt2*xc)+(opt3*x1);
-    int yt = (opt1*y0)+(opt2*yc)+(opt3*y1);
-    putpixel(xt, yt, r, g, b, a);
+    next.x = (opt1*x0)+(opt2*xc)+(opt3*x1);
+    next.y = (opt1*y0)+(opt2*yc)+(opt3*y1);
+
+    norm = normalize(basis(prew, next));
+
+    left_cr = rotate_left(norm);
+    left_cr.x = (left_cr.x * size) + curr.x;
+    left_cr.y = (left_cr.y * size) + curr.y;
+
+    right_cr = rotate_right(norm);
+    right_cr.x = (right_cr.x * size) + curr.x;
+    right_cr.y = (right_cr.y * size) + curr.y;
+
+    draw_polygon(left_pr, right_pr, left_cr, right_cr, r ,g ,b ,a);
   }
+
+  prew.x = xc;
+  prew.y = yc;
+  
+  curr.x = x1;
+  curr.y = x1;
+
+  next.x = x1;
+  next.y = y1;
+
+  left_pr = left_cr;
+  right_pr = right_cr;
+
+  norm = normalize(basis(prew, next));
+
+  left_cr = rotate_left(norm);
+  left_cr.x = (left_cr.x * size) + curr.x;
+  left_cr.y = (left_cr.y * size) + curr.y;
+
+  right_cr = rotate_right(norm);
+  right_cr.x = (right_cr.x * size) + curr.x;
+  right_cr.y = (right_cr.y * size) + curr.y;
+
+  draw_polygon(left_pr, right_pr, left_cr, right_cr, r ,g ,b ,a);
 
   assert(top == lua_gettop(L));
   return 0;
