@@ -360,10 +360,11 @@ static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int 
 
     for (int y = y0 + 1; y < y1; y++)
     {
+      int intens = (int)(FPart(interx) * a);
       //Верхняя точка
-      putpixel(IPart(interx), y, r, g, b, 255 - (int)(FPart(interx) * a));
+      putpixel(IPart(interx), y, r, g, b, 255 - intens);
       //Нижняя точка
-      putpixel(IPart(interx) + 1, y, r, g, b, (int)(FPart(interx) * a));
+      putpixel(IPart(interx) + 1, y, r, g, b, intens);
       //Изменение координаты X
       interx += grad;
     }
@@ -429,42 +430,97 @@ static void DrawWuCircle(int _x, int _y, int radius, int r, int g, int b, int a)
   putpixel(_x - radius + 1, _y, r, g, b, a);
   putpixel(_x, _y - radius + 1, r, g, b, a);
 
-  log(_x);
-  log(_y);
+  float iy = 0;
+  for (int x = 0; x <= radius * cos(M_PI / 4); x++)
+  {
+    //Вычисление точного значения координаты Y
+    iy = (float)sqrt(radius * radius - x * x);
+    int intens = (int)(FPart(iy) * a);
+    int inv_intens = 255 - (int)(FPart(iy) * a);
+    int iiy = IPart(iy);
+
+    //IV квадрант, Y
+    putpixel(_x - x, _y + iiy, r, g, b, inv_intens);
+    putpixel(_x - x, _y + iiy + 1, r, g, b, intens);
+    //I квадрант, Y
+    putpixel(_x + x, _y + iiy, r, g, b, inv_intens);
+    putpixel(_x + x, _y + iiy + 1, r, g, b, intens);
+    
+    //I квадрант, X
+    putpixel(_x + iiy, _y + x, r, g, b, inv_intens);
+    putpixel(_x + iiy + 1, _y + x, r, g, b, intens);
+    //II квадрант, X
+    putpixel(_x + iiy, _y - x, r, g, b, inv_intens);
+    putpixel(_x + iiy + 1, _y - x, r, g, b, intens);
+
+    //С помощью инкремента устраняется ошибка смещения на 1 пиксел
+    x++;
+    //II квадрант, Y
+    putpixel(_x + x, _y - iiy, r, g, b, intens);
+    putpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
+    //III квадрант, Y
+    putpixel(_x - x, _y - iiy, r, g, b, intens);
+    putpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
+    //III квадрант, X
+    putpixel(_x - iiy, _y - x, r, g, b, intens);
+    putpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
+    //IV квадрант, X
+    putpixel(_x - iiy, _y + x, r, g, b, intens);
+    putpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
+    //Возврат значения
+    x--;
+  }
+}
+
+static void DrawWuFilledCircle(int _x, int _y, int radius, int r, int g, int b, int a)
+{
+  //Установка пикселов, лежащих на осях системы координат с началом в центре
+  putpixel(_x + radius, _y, r, g, b, a);
+  putpixel(_x, _y + radius, r, g, b, a);
+  putpixel(_x - radius + 1, _y, r, g, b, a);
+  putpixel(_x, _y - radius + 1, r, g, b, a);
 
   float iy = 0;
   for (int x = 0; x <= radius * cos(M_PI / 4); x++)
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
+    int intens = (int)(FPart(iy) * a);
+    int inv_intens = 255 - (int)(FPart(iy) * a);
+    int iiy = IPart(iy);
 
     //IV квадрант, Y
-    putpixel(_x - x, _y + IPart(iy), r, g, b, 255 - (int)(FPart(iy) * a));
-    putpixel(_x - x, _y + IPart(iy) + 1, r, g, b, (int)(FPart(iy) * a));
+    putpixel(_x - x, _y + iiy, r, g, b, inv_intens);
+    putpixel(_x - x, _y + iiy + 1, r, g, b, intens);
     //I квадрант, Y
-    putpixel(_x + x, _y + IPart(iy), r, g, b, 255 - (int)(FPart(iy) * a));
-    putpixel(_x + x, _y + IPart(iy) + 1, r, g, b, (int)(FPart(iy) * a));
-    //I квадрант, X
-    putpixel(_x + IPart(iy), _y + x, r, g, b, 255 - (int)(FPart(iy) * a));
-    putpixel(_x + IPart(iy) + 1, _y + x, r, g, b, (int)(FPart(iy) * a));
-    //II квадрант, X
-    putpixel(_x + IPart(iy), _y - x, r, g, b, 255 - (int)(FPart(iy) * a));
-    putpixel(_x + IPart(iy) + 1, _y - x, r, g, b, (int)(FPart(iy) * a));
+    putpixel(_x + x, _y + iiy, r, g, b, inv_intens);
+    putpixel(_x + x, _y + iiy + 1, r, g, b, intens);
+    fill_line(_x - x, _x + x, _y + iiy, r, g, b, a);
+    
+    // //I квадрант, X
+    putpixel(_x + iiy, _y + x, r, g, b, inv_intens);
+    putpixel(_x + iiy + 1, _y + x, r, g, b, intens);
+    // //II квадрант, X
+    putpixel(_x + iiy, _y - x, r, g, b, inv_intens);
+    putpixel(_x + iiy + 1, _y - x, r, g, b, intens);
 
     //С помощью инкремента устраняется ошибка смещения на 1 пиксел
     x++;
     //II квадрант, Y
-    putpixel(_x + x, _y - IPart(iy), r, g, b, (int)(FPart(iy) * a));
-    putpixel(_x + x, _y - IPart(iy) + 1, r, g, b, 255 - (int)(FPart(iy) * a));
+    putpixel(_x + x, _y - iiy, r, g, b, intens);
+    putpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
     //III квадрант, Y
-    putpixel(_x - x, _y - IPart(iy), r, g, b, (int)(FPart(iy) * a));
-    putpixel(_x - x, _y - IPart(iy) + 1, r, g, b, 255 - (int)(FPart(iy) * a));
+    putpixel(_x - x, _y - iiy, r, g, b, intens);
+    putpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
+    fill_line(_x + x, _x - x, _y - iiy + 1, r, g, b, a);
     //III квадрант, X
-    putpixel(_x - IPart(iy), _y - x, r, g, b, (int)(FPart(iy) * a));
-    putpixel(_x - IPart(iy) + 1, _y - x, r, g, b, 255 - (int)(FPart(iy) * a));
-    //IV квадрант, X
-    putpixel(_x - IPart(iy), _y + x, r, g, b, (int)(FPart(iy) * a));
-    putpixel(_x - IPart(iy) + 1, _y + x, r, g, b, 255 - (int)(FPart(iy) * a));
+    putpixel(_x - iiy, _y - x, r, g, b, intens);
+    putpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
+    fill_line(_x - iiy + 1, _x + iiy, _y - x + 1, r, g, b, a);
+    // //IV квадрант, X
+    putpixel(_x - iiy, _y + x, r, g, b, intens);
+    putpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
+    fill_line(_x - iiy + 1, _x + iiy, _y + x - 1, r, g, b, a);
     //Возврат значения
     x--;
   }
@@ -791,6 +847,29 @@ static int draw_wu_circle(lua_State *L)
   return 0;
 }
 
+static int draw_wu_filled_circle(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
+  uint32_t r = luaL_checknumber(L, 5);
+  uint32_t g = luaL_checknumber(L, 6);
+  uint32_t b = luaL_checknumber(L, 7);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 8) == 1)
+  {
+    a = luaL_checknumber(L, 8);
+  }
+
+  DrawWuFilledCircle(posx, posy, diameter / 2, r, g, b, a);
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 static int draw_wu_line(lua_State *L)
 {
   int top = lua_gettop(L) + 4;
@@ -815,10 +894,38 @@ static int draw_wu_line(lua_State *L)
   return 0;
 }
 
+static int draw_triangle(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x0 = luaL_checknumber(L, 2);
+  int32_t y0 = luaL_checknumber(L, 3);
+  int32_t x1 = luaL_checknumber(L, 4);
+  int32_t y1 = luaL_checknumber(L, 5);
+  int32_t x2 = luaL_checknumber(L, 6);
+  int32_t y2 = luaL_checknumber(L, 7);
+  uint32_t r = luaL_checknumber(L, 8);
+  uint32_t g = luaL_checknumber(L, 9);
+  uint32_t b = luaL_checknumber(L, 10);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 11) == 1)
+  {
+    a = luaL_checknumber(L, 11);
+  }
+
+  drawTriangle(x0, y0, x1, y1, x2, y2, r, g, b, a);
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
+    {"triangle", draw_triangle},
     {"line", draw_line},
     {"line_AA", draw_wu_line},
+    {"filled_circle_AA", draw_wu_filled_circle},
     {"circle_AA", draw_wu_circle},
     {"circle", draw_circle},
     {"filled_circle", draw_filled_circle},

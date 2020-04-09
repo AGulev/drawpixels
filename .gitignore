@@ -5,6 +5,7 @@
 build
 *.pyc
 .project
+.vscode
 .cproject
 builtins
 .internal
