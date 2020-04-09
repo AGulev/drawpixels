@@ -71,12 +71,9 @@ static int xytoi(int x, int y)
   return (y * buffer_info.width * buffer_info.channels) + (x * buffer_info.channels);
 }
 
-static void recordtobuffer(int i, float r, float g, float b, float a)
+static void recordtobuffer(int i, float v)
 {
-  buffer_info.bytes[i] = r > 1 ? 255 : r * 255.0;
-  buffer_info.bytes[i + 1] = g > 1 ? 255 : g * 255.0;
-  buffer_info.bytes[i + 2] = b > 1 ? 255 : b * 255.0;
-  buffer_info.bytes[i + 3] = a > 1 ? 255 : a * 255.0;
+  buffer_info.bytes[i] = v > 1 ? 255 : v * 255.0;
 }
 
 static float getmixrgb(float dc, float da, float sc, float sa, float oa)
@@ -99,25 +96,16 @@ static void mixpixel(int x, int y, float r, float g, float b, float a)
   }
   int i = xytoi(x, y);
 
-  r = r / 255.0;
-  g = g / 255.0;
-  b = b / 255.0;
   a = a / 255.0;
-  float br = buffer_info.bytes[i] / 255.0;
-  float bg = buffer_info.bytes[i + 1] / 255.0;
-  float bb = buffer_info.bytes[i + 2] / 255.0;
   float ba = buffer_info.bytes[i + 3] / 255.0;
-
-  float _sa = a;
-  float _da = ba;
-  float oa = _sa + _da * (1 - _sa);
-
-  r = getmixrgb(br, ba, r, a, oa);
-  g = getmixrgb(bg, ba, g, a, oa);
-  b = getmixrgb(bb, ba, b, a, oa);
-
-  recordtobuffer(i, r, g, b, oa);
-  // buffer_info.bytes[i + 3] = a * ((float)a / 255);
+  float oa = a + ba * (1 - a);
+  r = getmixrgb(buffer_info.bytes[i] / 255.0, ba, r / 255.0, a, oa);
+  g = getmixrgb(buffer_info.bytes[i + 1] / 255.0, ba, g / 255.0, a, oa);
+  b = getmixrgb(buffer_info.bytes[i + 2] / 255.0, ba, b / 255.0, a, oa);
+  recordtobuffer(i, r);
+  recordtobuffer(i + 1, g);
+  recordtobuffer(i + 2, b);
+  recordtobuffer(i + 3, oa);
 }
 
 static void putpixel(int x, int y, int r, int g, int b, int a)
@@ -371,19 +359,19 @@ static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int 
     //Промежуточная переменная для Y
     float intery = y0 + grad;
     //Первая точка
-    putpixel(x0, y0, r, g, b, a);
+    mixpixel(x0, y0, r, g, b, a);
 
     for (int x = x0 + 1; x < x1; x++)
     {
       //Верхняя точка
-      putpixel(x, IPart(intery), r, g, b, (int)(255 - FPart(intery) * a));
+      mixpixel(x, IPart(intery), r, g, b, (int)(255 - FPart(intery) * a));
       //Нижняя точка
-      putpixel(x, IPart(intery) + 1, r, g, b, (int)(FPart(intery) * a));
+      mixpixel(x, IPart(intery) + 1, r, g, b, (int)(FPart(intery) * a));
       //Изменение координаты Y
       intery += grad;
     }
     //Последняя точка
-    putpixel(x1, y1, r, g, b, a);
+    mixpixel(x1, y1, r, g, b, a);
   }
   //Для Y-линии (коэффициент наклона > 1)
   else
@@ -405,20 +393,20 @@ static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int 
     //Промежуточная переменная для X
     float interx = x0 + grad;
     //Первая точка
-    putpixel(x0, y0, r, g, b, a);
+    mixpixel(x0, y0, r, g, b, a);
 
     for (int y = y0 + 1; y < y1; y++)
     {
       int intens = (int)(FPart(interx) * a);
       //Верхняя точка
-      putpixel(IPart(interx), y, r, g, b, 255 - intens);
+      mixpixel(IPart(interx), y, r, g, b, 255 - intens);
       //Нижняя точка
-      putpixel(IPart(interx) + 1, y, r, g, b, intens);
+      mixpixel(IPart(interx) + 1, y, r, g, b, intens);
       //Изменение координаты X
       interx += grad;
     }
     //Последняя точка
-    putpixel(x1, y1, r, g, b, a);
+    mixpixel(x1, y1, r, g, b, a);
   }
 }
 
@@ -524,10 +512,10 @@ static void DrawWuCircle(int _x, int _y, int radius, int r, int g, int b, int a)
 static void DrawWuFilledCircle(int _x, int _y, int radius, int r, int g, int b, int a)
 {
   //Установка пикселов, лежащих на осях системы координат с началом в центре
-  putpixel(_x + radius, _y, r, g, b, a);
-  putpixel(_x, _y + radius, r, g, b, a);
-  putpixel(_x - radius + 1, _y, r, g, b, a);
-  putpixel(_x, _y - radius + 1, r, g, b, a);
+  mixpixel(_x + radius, _y, r, g, b, a);
+  mixpixel(_x, _y + radius, r, g, b, a);
+  mixpixel(_x - radius + 1, _y, r, g, b, a);
+  mixpixel(_x, _y - radius + 1, r, g, b, a);
 
   float iy = 0;
   for (int x = 0; x <= radius * cos(M_PI / 4); x++)
@@ -539,36 +527,36 @@ static void DrawWuFilledCircle(int _x, int _y, int radius, int r, int g, int b, 
     int iiy = IPart(iy);
 
     //IV квадрант, Y
-    putpixel(_x - x, _y + iiy, r, g, b, inv_intens);
-    putpixel(_x - x, _y + iiy + 1, r, g, b, intens);
+    mixpixel(_x - x, _y + iiy, r, g, b, inv_intens);
+    mixpixel(_x - x, _y + iiy + 1, r, g, b, intens);
     //I квадрант, Y
-    putpixel(_x + x, _y + iiy, r, g, b, inv_intens);
-    putpixel(_x + x, _y + iiy + 1, r, g, b, intens);
+    mixpixel(_x + x, _y + iiy, r, g, b, inv_intens);
+    mixpixel(_x + x, _y + iiy + 1, r, g, b, intens);
     fill_line(_x - x, _x + x, _y + iiy, r, g, b, a);
 
     // //I квадрант, X
-    putpixel(_x + iiy, _y + x, r, g, b, inv_intens);
-    putpixel(_x + iiy + 1, _y + x, r, g, b, intens);
+    mixpixel(_x + iiy, _y + x, r, g, b, inv_intens);
+    mixpixel(_x + iiy + 1, _y + x, r, g, b, intens);
     // //II квадрант, X
-    putpixel(_x + iiy, _y - x, r, g, b, inv_intens);
-    putpixel(_x + iiy + 1, _y - x, r, g, b, intens);
+    mixpixel(_x + iiy, _y - x, r, g, b, inv_intens);
+    mixpixel(_x + iiy + 1, _y - x, r, g, b, intens);
 
     //С помощью инкремента устраняется ошибка смещения на 1 пиксел
     x++;
     //II квадрант, Y
-    putpixel(_x + x, _y - iiy, r, g, b, intens);
-    putpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
+    mixpixel(_x + x, _y - iiy, r, g, b, intens);
+    mixpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
     //III квадрант, Y
-    putpixel(_x - x, _y - iiy, r, g, b, intens);
-    putpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
+    mixpixel(_x - x, _y - iiy, r, g, b, intens);
+    mixpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
     fill_line(_x + x, _x - x, _y - iiy + 1, r, g, b, a);
     //III квадрант, X
-    putpixel(_x - iiy, _y - x, r, g, b, intens);
-    putpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
+    mixpixel(_x - iiy, _y - x, r, g, b, intens);
+    mixpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
     fill_line(_x - iiy + 1, _x + iiy, _y - x + 1, r, g, b, a);
     // //IV квадрант, X
-    putpixel(_x - iiy, _y + x, r, g, b, intens);
-    putpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
+    mixpixel(_x - iiy, _y + x, r, g, b, intens);
+    mixpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
     fill_line(_x - iiy + 1, _x + iiy, _y + x - 1, r, g, b, a);
     //Возврат значения
     x--;
