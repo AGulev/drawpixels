@@ -71,6 +71,55 @@ static int xytoi(int x, int y)
   return (y * buffer_info.width * buffer_info.channels) + (x * buffer_info.channels);
 }
 
+static void recordtobuffer(int i, float r, float g, float b, float a)
+{
+  buffer_info.bytes[i] = r > 1 ? 255 : r * 255.0;
+  buffer_info.bytes[i + 1] = g > 1 ? 255 : g * 255.0;
+  buffer_info.bytes[i + 2] = b > 1 ? 255 : b * 255.0;
+  buffer_info.bytes[i + 3] = a > 1 ? 255 : a * 255.0;
+}
+
+static float getmixrgb(float dc, float da, float sc, float sa, float oa)
+{
+  if (oa == 0)
+  {
+    return 0.0;
+  }
+
+  float color = (sc * sa + dc * da * (1 - sa)) / oa;
+
+  return color;
+}
+
+static void mixpixel(int x, int y, float r, float g, float b, float a)
+{
+  if (a == 0 || !in_buffer(x, y))
+  {
+    return;
+  }
+  int i = xytoi(x, y);
+
+  r = r / 255.0;
+  g = g / 255.0;
+  b = b / 255.0;
+  a = a / 255.0;
+  float br = buffer_info.bytes[i] / 255.0;
+  float bg = buffer_info.bytes[i + 1] / 255.0;
+  float bb = buffer_info.bytes[i + 2] / 255.0;
+  float ba = buffer_info.bytes[i + 3] / 255.0;
+
+  float _sa = a;
+  float _da = ba;
+  float oa = _sa + _da * (1 - _sa);
+
+  r = getmixrgb(br, ba, r, a, oa);
+  g = getmixrgb(bg, ba, g, a, oa);
+  b = getmixrgb(bb, ba, b, a, oa);
+
+  recordtobuffer(i, r, g, b, oa);
+  // buffer_info.bytes[i + 3] = a * ((float)a / 255);
+}
+
 static void putpixel(int x, int y, int r, int g, int b, int a)
 {
   // ignore the pixel if it's outside the area of the buffer
@@ -425,10 +474,10 @@ static int read_color(lua_State *L)
 static void DrawWuCircle(int _x, int _y, int radius, int r, int g, int b, int a)
 {
   //Установка пикселов, лежащих на осях системы координат с началом в центре
-  putpixel(_x + radius, _y, r, g, b, a);
-  putpixel(_x, _y + radius, r, g, b, a);
-  putpixel(_x - radius + 1, _y, r, g, b, a);
-  putpixel(_x, _y - radius + 1, r, g, b, a);
+  mixpixel(_x + radius, _y, r, g, b, a);
+  mixpixel(_x, _y + radius, r, g, b, a);
+  mixpixel(_x - radius + 1, _y, r, g, b, a);
+  mixpixel(_x, _y - radius + 1, r, g, b, a);
 
   float iy = 0;
   for (int x = 0; x <= radius * cos(M_PI / 4); x++)
@@ -440,33 +489,33 @@ static void DrawWuCircle(int _x, int _y, int radius, int r, int g, int b, int a)
     int iiy = IPart(iy);
 
     //IV квадрант, Y
-    putpixel(_x - x, _y + iiy, r, g, b, inv_intens);
-    putpixel(_x - x, _y + iiy + 1, r, g, b, intens);
+    mixpixel(_x - x, _y + iiy, r, g, b, inv_intens);
+    mixpixel(_x - x, _y + iiy + 1, r, g, b, intens);
     //I квадрант, Y
-    putpixel(_x + x, _y + iiy, r, g, b, inv_intens);
-    putpixel(_x + x, _y + iiy + 1, r, g, b, intens);
-    
+    mixpixel(_x + x, _y + iiy, r, g, b, inv_intens);
+    mixpixel(_x + x, _y + iiy + 1, r, g, b, intens);
+
     //I квадрант, X
-    putpixel(_x + iiy, _y + x, r, g, b, inv_intens);
-    putpixel(_x + iiy + 1, _y + x, r, g, b, intens);
+    mixpixel(_x + iiy, _y + x, r, g, b, inv_intens);
+    mixpixel(_x + iiy + 1, _y + x, r, g, b, intens);
     //II квадрант, X
-    putpixel(_x + iiy, _y - x, r, g, b, inv_intens);
-    putpixel(_x + iiy + 1, _y - x, r, g, b, intens);
+    mixpixel(_x + iiy, _y - x, r, g, b, inv_intens);
+    mixpixel(_x + iiy + 1, _y - x, r, g, b, intens);
 
     //С помощью инкремента устраняется ошибка смещения на 1 пиксел
     x++;
     //II квадрант, Y
-    putpixel(_x + x, _y - iiy, r, g, b, intens);
-    putpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
+    mixpixel(_x + x, _y - iiy, r, g, b, intens);
+    mixpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
     //III квадрант, Y
-    putpixel(_x - x, _y - iiy, r, g, b, intens);
-    putpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
+    mixpixel(_x - x, _y - iiy, r, g, b, intens);
+    mixpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
     //III квадрант, X
-    putpixel(_x - iiy, _y - x, r, g, b, intens);
-    putpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
+    mixpixel(_x - iiy, _y - x, r, g, b, intens);
+    mixpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
     //IV квадрант, X
-    putpixel(_x - iiy, _y + x, r, g, b, intens);
-    putpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
+    mixpixel(_x - iiy, _y + x, r, g, b, intens);
+    mixpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
     //Возврат значения
     x--;
   }
@@ -496,7 +545,7 @@ static void DrawWuFilledCircle(int _x, int _y, int radius, int r, int g, int b, 
     putpixel(_x + x, _y + iiy, r, g, b, inv_intens);
     putpixel(_x + x, _y + iiy + 1, r, g, b, intens);
     fill_line(_x - x, _x + x, _y + iiy, r, g, b, a);
-    
+
     // //I квадрант, X
     putpixel(_x + iiy, _y + x, r, g, b, inv_intens);
     putpixel(_x + iiy + 1, _y + x, r, g, b, intens);
