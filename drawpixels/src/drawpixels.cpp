@@ -227,24 +227,8 @@ static void read_and_validate_buffer_info(lua_State *L, int index)
 // static void draw_simple_line(int x0, int y0.int  x1,int  y1, int r, int g, int b, int a) {
 // }
 
-static int draw_line(lua_State *L)
+static void DrawLine(int x0, int y0, int x1, int y1, int r, int g, int b, int a)
 {
-  int top = lua_gettop(L) + 4;
-
-  read_and_validate_buffer_info(L, 1);
-  int32_t x0 = luaL_checknumber(L, 2);
-  int32_t y0 = luaL_checknumber(L, 3);
-  int32_t x1 = luaL_checknumber(L, 4);
-  int32_t y1 = luaL_checknumber(L, 5);
-  uint32_t r = luaL_checknumber(L, 6);
-  uint32_t g = luaL_checknumber(L, 7);
-  uint32_t b = luaL_checknumber(L, 8);
-  uint32_t a = 0;
-  if (lua_isnumber(L, 9) == 1)
-  {
-    a = luaL_checknumber(L, 9);
-  }
-
   // https://gist.github.com/bert/1085538#file-plot_line-c
   int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
   int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
@@ -267,6 +251,27 @@ static int draw_line(lua_State *L)
       y0 += sy;
     } /* e_xy+e_y < 0 */
   }
+}
+
+static int draw_line(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x0 = luaL_checknumber(L, 2);
+  int32_t y0 = luaL_checknumber(L, 3);
+  int32_t x1 = luaL_checknumber(L, 4);
+  int32_t y1 = luaL_checknumber(L, 5);
+  uint32_t r = luaL_checknumber(L, 6);
+  uint32_t g = luaL_checknumber(L, 7);
+  uint32_t b = luaL_checknumber(L, 8);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 9) == 1)
+  {
+    a = luaL_checknumber(L, 9);
+  }
+
+  DrawLine(x0, y0, x1, y1, r, g, b, a);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -291,12 +296,11 @@ static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int 
   int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
   int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
   //Если линия параллельна одной из осей, рисуем обычную линию - заполняем все пикселы в ряд
-  // if (dx == 0 || dy == 0)
-  // {
-  //   draw_line(L);
-  //   assert(top == lua_gettop(L));
-  //   return 0;
-  // }
+  if (dx == 0 || dy == 0)
+  {
+    DrawLine(x0, y0, x1, y1, r, g, b, a);
+    return;
+  }
 
   //Для Х-линии (коэффициент наклона < 1)
   if (dy < dx)
@@ -813,10 +817,11 @@ static int draw_wu_line(lua_State *L)
 
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
-    {"line", draw_wu_line},
+    {"line", draw_line},
     {"line_AA", draw_wu_line},
-    {"circle", draw_wu_circle},
-    {"filled_circle", draw_circle},
+    {"circle_AA", draw_wu_circle},
+    {"circle", draw_circle},
+    {"filled_circle", draw_filled_circle},
     {"fill", fill_texture},
     {"rect", draw_rect},
     {"filled_rect", draw_filled_rect},
