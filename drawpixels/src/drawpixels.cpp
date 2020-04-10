@@ -5,9 +5,6 @@
 #define DLIB_LOG_DOMAIN LIB_NAME
 #define M_PI 3.14159265358979323846
 
-// define for log function
-#define INC_LOG
-
 #include <dmsdk/sdk.h>
 #include <math.h>
 #include <stdlib.h>
@@ -32,26 +29,6 @@ struct Point
   int x;
   int y;
 };
-
-#ifdef INC_LOG
-static void log(int value)
-{
-  std::string s = std::to_string(value);
-  int n = s.length();
-  char char_array[n + 1];
-  strcpy(char_array, s.c_str());
-  dmLogInfo(char_array);
-}
-
-static void log(float value)
-{
-  std::string s = std::to_string(value);
-  int n = s.length();
-  char char_array[n + 1];
-  strcpy(char_array, s.c_str());
-  dmLogInfo(char_array);
-}
-#endif
 
 static int in_buffer(int x, int y)
 {
@@ -342,13 +319,13 @@ static void plotLineWidth(int x0, int y0, int x1, int y1, float wd, int r, int g
 
   for (wd = (wd + 1) / 2;;)
   { /* pixel loop */
-    mixpixel(x0, y0, r, g, b, a - max(0, 255 * (abs(err - dx + dy) / ed - wd + 1)));
+    mixpixel(x0, y0, r, g, b, a - fmax(0, 255 * (abs(err - dx + dy) / ed - wd + 1)));
     e2 = err;
     x2 = x0;
     if (2 * e2 >= -dx)
     { /* x step */
       for (e2 += dy, y2 = y0; e2 < ed * wd && (y1 != y2 || dx > dy); e2 += dx)
-        mixpixel(x0, y2 += sy, r, g, b, a - max(0, 255 * (abs(e2) / ed - wd + 1)));
+        mixpixel(x0, y2 += sy, r, g, b, a - fmax(0, 255 * (abs(e2) / ed - wd + 1)));
       if (x0 == x1)
         break;
       e2 = err;
@@ -358,7 +335,7 @@ static void plotLineWidth(int x0, int y0, int x1, int y1, float wd, int r, int g
     if (2 * e2 <= dy)
     { /* y step */
       for (e2 = dx - e2; e2 < ed * wd && (x1 != x2 || dx < dy); e2 += dy)
-        mixpixel(x2 += sx, y0, r, g, b, a - max(0, 255 * (abs(e2) / ed - wd + 1)));
+        mixpixel(x2 += sx, y0, r, g, b, a - fmax(0, 255 * (abs(e2) / ed - wd + 1)));
       if (y0 == y1)
         break;
       err += dx;
