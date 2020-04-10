@@ -59,10 +59,7 @@ static float getmixrgb(float dc, float da, float sc, float sa, float oa)
   {
     return 0.0;
   }
-
-  float color = (sc * sa + dc * da * (1 - sa)) / oa;
-
-  return color;
+  return (sc * sa + dc * da * (1 - sa)) / oa;
 }
 
 static void putpixel(int x, int y, int r, int g, int b, int a)
@@ -72,7 +69,6 @@ static void putpixel(int x, int y, int r, int g, int b, int a)
   {
     return;
   }
-
   int i = xytoi(x, y);
   buffer_info.bytes[i] = r;
   buffer_info.bytes[i + 1] = g;
@@ -83,20 +79,8 @@ static void putpixel(int x, int y, int r, int g, int b, int a)
   }
 }
 
-static void mixpixel(int x, int y, float r, float g, float b, float a)
+static void recordmixpixel(int i, float r, float g, float b, float a)
 {
-  if (a == 0 || !in_buffer(x, y))
-  {
-    return;
-  }
-  int i = xytoi(x, y);
-
-  if (buffer_info.bytes[i + 3] == 0)
-  {
-    putpixel(x, y, r, g, b, a);
-    return;
-  }
-
   float ba = buffer_info.bytes[i + 3] / 255.0;
   a = a / 255.0;
   float oa = a + ba * (1 - a);
@@ -107,6 +91,44 @@ static void mixpixel(int x, int y, float r, float g, float b, float a)
   recordtobuffer(i + 1, g);
   recordtobuffer(i + 2, b);
   recordtobuffer(i + 3, oa);
+}
+
+static void mixpixel(int x, int y, float r, float g, float b, float a)
+{
+  if (!in_buffer(x, y))
+  {
+    return;
+  }
+  int i = xytoi(x, y);
+  if (buffer_info.channels == 3 || buffer_info.bytes[i + 3] == 0 || a == 255)
+  {
+    putpixel(x, y, r, g, b, a);
+    return;
+  }
+  if (a == 0)
+  {
+    return;
+  }
+
+  recordmixpixel(i, r, g, b, a);
+}
+
+static void fill_mixed_line(int fromx, int tox, int y, int r, int g, int b, int a)
+{
+  if (fromx > tox)
+  {
+    int temp = fromx;
+    fromx = tox;
+    tox = temp;
+  }
+  fromx = fmax(0, fromx);
+  tox = fmin(buffer_info.width - 1, tox);
+  int start = xytoi(fromx, y);
+  int end = xytoi(tox, y);
+  for (int i = start; i < end; i += 4)
+  {
+    recordmixpixel(i, r, g, b, a);
+  }
 }
 
 static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a)
@@ -480,8 +502,8 @@ static int read_color(lua_State *L)
 static void DrawWuCircle(int _x, int _y, int radius, int r, int g, int b, int a)
 {
   //Установка пикселов, лежащих на осях системы координат с началом в центре
-  mixpixel(_x + radius, _y, r, g, b, a);
-  mixpixel(_x, _y + radius, r, g, b, a);
+  // mixpixel(_x + radius, _y, r, g, b, a);
+  // mixpixel(_x, _y + radius, r, g, b, a);
   mixpixel(_x - radius + 1, _y, r, g, b, a);
   mixpixel(_x, _y - radius + 1, r, g, b, a);
 
@@ -490,13 +512,13 @@ static void DrawWuCircle(int _x, int _y, int radius, int r, int g, int b, int a)
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
-    int intens = (int)(FPart(iy) * a);
-    int inv_intens = 255 - (int)(FPart(iy) * a);
+    int intens = (int)((FPart(iy) * 255.0) * a / 255);
+    int inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
     int iiy = IPart(iy);
 
     //IV квадрант, Y
-    mixpixel(_x - x, _y + iiy, r, g, b, inv_intens);
-    mixpixel(_x - x, _y + iiy + 1, r, g, b, intens);
+    mixpixel(_x - x - 1, _y + iiy, r, g, b, inv_intens);
+    mixpixel(_x - x - 1, _y + iiy + 1, r, g, b, intens);
     //I квадрант, Y
     mixpixel(_x + x, _y + iiy, r, g, b, inv_intens);
     mixpixel(_x + x, _y + iiy + 1, r, g, b, intens);
@@ -505,8 +527,8 @@ static void DrawWuCircle(int _x, int _y, int radius, int r, int g, int b, int a)
     mixpixel(_x + iiy, _y + x, r, g, b, inv_intens);
     mixpixel(_x + iiy + 1, _y + x, r, g, b, intens);
     //II квадрант, X
-    mixpixel(_x + iiy, _y - x, r, g, b, inv_intens);
-    mixpixel(_x + iiy + 1, _y - x, r, g, b, intens);
+    mixpixel(_x + iiy, _y - x - 1, r, g, b, inv_intens);
+    mixpixel(_x + iiy + 1, _y - x - 1, r, g, b, intens);
 
     //С помощью инкремента устраняется ошибка смещения на 1 пиксел
     x++;
@@ -574,8 +596,8 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
-    int intens = is_intens ? (int)(FPart(iy) * a) : a;
-    int inv_intens = is_intens ?  255 - (int)(FPart(iy) * a) : a;
+    int intens = (int)((FPart(iy) * 255.0) * a / 255);
+    int inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
     int iiy = IPart(iy);
 
     //IV квадрант, Y
@@ -655,34 +677,43 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
 static void DrawWuFilledCircle(int _x, int _y, int radius, int r, int g, int b, int a)
 {
   //Установка пикселов, лежащих на осях системы координат с началом в центре
-  mixpixel(_x + radius, _y, r, g, b, a);
-  mixpixel(_x, _y + radius, r, g, b, a);
+  // mixpixel(_x + radius, _y, r, g, b, a);
+  // mixpixel(_x, _y + radius, r, g, b, a);
   mixpixel(_x - radius + 1, _y, r, g, b, a);
   mixpixel(_x, _y - radius + 1, r, g, b, a);
 
   float iy = 0;
-  for (int x = 0; x <= radius * cos(M_PI / 4); x++)
+  int last_iiy1 = 0;
+  int last_iiy2 = 0;
+  int last_iiy3 = 0;
+  int last_iiy4 = 0;
+  int first_x = radius * cos(M_PI / 4);
+  int first_y = sqrt(radius * radius - first_x * first_x);
+  for (int x = first_x; x >= 0; x--)
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
-    int intens = (int)(FPart(iy) * a);
-    int inv_intens = 255 - (int)(FPart(iy) * a);
+    int intens = (int)((FPart(iy) * 255.0) * a / 255.0);
+    int inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
     int iiy = IPart(iy);
 
     //IV квадрант, Y
-    mixpixel(_x - x, _y + iiy, r, g, b, inv_intens);
-    mixpixel(_x - x, _y + iiy + 1, r, g, b, intens);
+    mixpixel(_x - x - 1, _y + iiy, r, g, b, inv_intens);
+    mixpixel(_x - x - 1, _y + iiy + 1, r, g, b, intens);
     //I квадрант, Y
     mixpixel(_x + x, _y + iiy, r, g, b, inv_intens);
     mixpixel(_x + x, _y + iiy + 1, r, g, b, intens);
-    fill_line(_x - x, _x + x, _y + iiy, r, g, b, a);
+    if (_y + iiy != last_iiy1)
+    {
+      fill_mixed_line(_x - x, _x + x, _y + iiy, r, g, b, a);
+    }
 
     // //I квадрант, X
     mixpixel(_x + iiy, _y + x, r, g, b, inv_intens);
     mixpixel(_x + iiy + 1, _y + x, r, g, b, intens);
     // //II квадрант, X
-    mixpixel(_x + iiy, _y - x, r, g, b, inv_intens);
-    mixpixel(_x + iiy + 1, _y - x, r, g, b, intens);
+    mixpixel(_x + iiy, _y - x - 1, r, g, b, inv_intens);
+    mixpixel(_x + iiy + 1, _y - x - 1, r, g, b, intens);
 
     //С помощью инкремента устраняется ошибка смещения на 1 пиксел
     x++;
@@ -692,38 +723,36 @@ static void DrawWuFilledCircle(int _x, int _y, int radius, int r, int g, int b, 
     //III квадрант, Y
     mixpixel(_x - x, _y - iiy, r, g, b, intens);
     mixpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
-    fill_line(_x + x, _x - x, _y - iiy + 1, r, g, b, a);
+    if (_y - iiy + 1 != last_iiy2)
+    {
+      fill_mixed_line(_x + x + 1, _x - x + 1, _y - iiy + 1, r, g, b, a);
+    }
     //III квадрант, X
     mixpixel(_x - iiy, _y - x, r, g, b, intens);
     mixpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
-    fill_line(_x - iiy + 1, _x + iiy, _y - x + 1, r, g, b, a);
+    if (_y - x > _y - first_y + 1  && _y - x != last_iiy3)
+    {
+      fill_mixed_line(_x - iiy + 1, _x + iiy + 1, _y - x, r, g, b, a);
+    }
     // //IV квадрант, X
     mixpixel(_x - iiy, _y + x, r, g, b, intens);
     mixpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
-    fill_line(_x - iiy + 1, _x + iiy, _y + x - 1, r, g, b, a);
+    if (_y + iiy > _y + first_y  && _y + x != last_iiy4)
+    {
+      fill_mixed_line(_x - iiy + 1, _x + iiy + 1, _y + x - 1, r, g, b, a);
+    }
     //Возврат значения
     x--;
+    last_iiy1 = _y + iiy;
+    last_iiy2 =  _y - iiy + 1;
+    last_iiy3 = _y - x + 1;
+    last_iiy4 =  _y + x - 1;
   }
 }
 
 //https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
-static int draw_circle(lua_State *L)
+static void DrawCircle(int32_t posx, int32_t posy, int32_t diameter, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
 {
-  int top = lua_gettop(L) + 4;
-
-  read_and_validate_buffer_info(L, 1);
-  int32_t posx = luaL_checknumber(L, 2);
-  int32_t posy = luaL_checknumber(L, 3);
-  int32_t diameter = luaL_checknumber(L, 4);
-  uint32_t r = luaL_checknumber(L, 5);
-  uint32_t g = luaL_checknumber(L, 6);
-  uint32_t b = luaL_checknumber(L, 7);
-  uint32_t a = 0;
-  if (lua_isnumber(L, 8) == 1)
-  {
-    a = luaL_checknumber(L, 8);
-  }
-
   if (diameter > 0)
   {
     int radius = diameter / 2;
@@ -735,14 +764,14 @@ static int draw_circle(lua_State *L)
 
     while (x >= y)
     {
-      putpixel(posx + x, posy + y, r, g, b, a);
-      putpixel(posx + y, posy + x, r, g, b, a);
-      putpixel(posx - y, posy + x, r, g, b, a);
-      putpixel(posx - x, posy + y, r, g, b, a);
-      putpixel(posx - x, posy - y, r, g, b, a);
-      putpixel(posx - y, posy - x, r, g, b, a);
-      putpixel(posx + y, posy - x, r, g, b, a);
-      putpixel(posx + x, posy - y, r, g, b, a);
+      mixpixel(posx + x, posy + y, r, g, b, a);
+      mixpixel(posx + y, posy + x, r, g, b, a);
+      mixpixel(posx - y, posy + x, r, g, b, a);
+      mixpixel(posx - x, posy + y, r, g, b, a);
+      mixpixel(posx - x, posy - y, r, g, b, a);
+      mixpixel(posx - y, posy - x, r, g, b, a);
+      mixpixel(posx + y, posy - x, r, g, b, a);
+      mixpixel(posx + x, posy - y, r, g, b, a);
 
       if (err <= 0)
       {
@@ -759,28 +788,10 @@ static int draw_circle(lua_State *L)
       }
     }
   }
-
-  assert(top == lua_gettop(L));
-  return 0;
 }
 
-static int draw_filled_circle(lua_State *L)
+static void DrawFilledCircle(int32_t posx, int32_t posy, int32_t diameter, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
 {
-  int top = lua_gettop(L) + 4;
-
-  read_and_validate_buffer_info(L, 1);
-  int32_t posx = luaL_checknumber(L, 2);
-  int32_t posy = luaL_checknumber(L, 3);
-  int32_t diameter = luaL_checknumber(L, 4);
-  uint32_t r = luaL_checknumber(L, 5);
-  uint32_t g = luaL_checknumber(L, 6);
-  uint32_t b = luaL_checknumber(L, 7);
-  uint32_t a = 0;
-  if (lua_isnumber(L, 8) == 1)
-  {
-    a = luaL_checknumber(L, 8);
-  }
-
   if (diameter > 0)
   {
     int radius = diameter / 2;
@@ -811,9 +822,6 @@ static int draw_filled_circle(lua_State *L)
       }
     }
   }
-
-  assert(top == lua_gettop(L));
-  return 0;
 }
 
 static int fill_texture(lua_State *L)
@@ -1004,7 +1012,7 @@ static int draw_bezier(lua_State *L)
   return 0;
 }
 
-static int draw_wu_circle(lua_State *L)
+static int draw_circle(lua_State *L)
 {
   int top = lua_gettop(L) + 4;
 
@@ -1020,14 +1028,26 @@ static int draw_wu_circle(lua_State *L)
   {
     a = luaL_checknumber(L, 8);
   }
+  bool antialiasing = false;
+  if (lua_isboolean(L, 9) == 1)
+  {
+    antialiasing = lua_toboolean(L, 9);
+  }
 
-  DrawWuCircle(posx, posy, diameter / 2, r, g, b, a);
+  if (antialiasing && buffer_info.channels == 4)
+  {
+    DrawWuCircle(posx, posy, diameter / 2, r, g, b, a);
+  }
+  else
+  {
+    DrawCircle(posx, posy, diameter, r, g, b, a);
+  }
 
   assert(top == lua_gettop(L));
   return 0;
 }
 
-static int draw_wu_filled_circle(lua_State *L)
+static int draw_filled_circle(lua_State *L)
 {
   int top = lua_gettop(L) + 4;
 
@@ -1043,8 +1063,20 @@ static int draw_wu_filled_circle(lua_State *L)
   {
     a = luaL_checknumber(L, 8);
   }
+  bool antialiasing = false;
+  if (lua_isboolean(L, 9) == 1)
+  {
+    antialiasing = lua_toboolean(L, 9);
+  }
 
-  DrawWuFilledCircle(posx, posy, diameter / 2, r, g, b, a);
+  if (antialiasing && buffer_info.channels == 4)
+  {
+    DrawWuFilledCircle(posx, posy, diameter / 2, r, g, b, a);
+  }
+  else
+  {
+    DrawFilledCircle(posx, posy, diameter, r, g, b, a);
+  }
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1187,10 +1219,8 @@ static const luaL_reg Module_methods[] = {
     {"line", draw_line},
     {"line_thick", draw_thick_line},
     {"line_AA", draw_wu_line},
-    {"filled_circle_AA", draw_wu_filled_circle},
     {"filled_arc", draw_filled_arc},
     {"arc", draw_arc},
-    {"circle_AA", draw_wu_circle},
     {"circle", draw_circle},
     {"filled_circle", draw_filled_circle},
     {"fill", fill_texture},
