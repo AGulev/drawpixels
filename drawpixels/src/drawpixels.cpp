@@ -560,9 +560,9 @@ static bool sectorcont(float x, float y, int radius, float from, float to)
   return from <= to && from <= atan && atan <= to || from > to && to <= atan && atan <= from; // x * x + y * y <= radius * radius &&
 }
 
-static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
+static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a, bool is_intens)
 {
-  
+
   float iy = 0;
   // printf("floats: %4.2f\n", radius * cos(to));
   // log(radius * cos(to));
@@ -602,8 +602,8 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
-    int intens = (int)(FPart(iy) * a);
-    int inv_intens = 255 - (int)(FPart(iy) * a);
+    int intens = is_intens ? (int)(FPart(iy) * a) : a;
+    int inv_intens = is_intens ?  255 - (int)(FPart(iy) * a) : a;
     int iiy = IPart(iy);
 
     //IV квадрант, Y
@@ -1175,7 +1175,35 @@ static int draw_arc(lua_State *L)
     a = luaL_checknumber(L, 10);
   }
 
-  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
+  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a, true);
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
+static int draw_filled_arc(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
+  float from = luaL_checknumber(L, 5);
+  float to = luaL_checknumber(L, 6);
+  uint32_t r = luaL_checknumber(L, 7);
+  uint32_t g = luaL_checknumber(L, 8);
+  uint32_t b = luaL_checknumber(L, 9);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 10) == 1)
+  {
+    a = luaL_checknumber(L, 10);
+  }
+
+  for (size_t i = 1; i <= diameter / 2; i++)
+  {
+    DrawArcAA(posx, posy, i, from, to, r, g, b, a, i == diameter / 2);
+  }
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1188,6 +1216,7 @@ static const luaL_reg Module_methods[] = {
     {"line_thick", draw_thick_line},
     {"line_AA", draw_wu_line},
     {"filled_circle_AA", draw_wu_filled_circle},
+    {"filled_arc", draw_filled_arc},
     {"arc", draw_arc},
     {"circle_AA", draw_wu_circle},
     {"circle", draw_circle},
