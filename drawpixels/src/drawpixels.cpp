@@ -564,8 +564,6 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
 {
 
   float iy = 0;
-  // printf("floats: %4.2f\n", radius * cos(to));
-  // log(radius * cos(to));
   float fx = radius * cos(from + M_PI / 2);
   float fy = radius * sin(from + M_PI / 2);
   if (from == to)
@@ -575,9 +573,6 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   }
   int tx = radius * cos(to + M_PI / 2);
   int ty = radius * sin(to + M_PI / 2);
-  // log(tx);
-  // log(ty);
-  dmLogInfo("start");
   DrawLineVU(_x, _y, fx + _x, fy + _y, r, g, b, a);
   DrawLineVU(_x, _y, tx + _x, ty + _y, r, g, b, a);
 
