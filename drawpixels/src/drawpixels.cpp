@@ -30,6 +30,13 @@ struct Point
   int y;
 };
 
+struct Pixel
+{
+  int x;
+  int y;
+  Pixel *prev = nullptr;
+};
+
 static int in_buffer(int x, int y)
 {
   return (x >= 0) && (y >= 0) && (x < buffer_info.width) && (y < buffer_info.height);
@@ -129,6 +136,77 @@ static void fill_mixed_line(int fromx, int tox, int y, int r, int g, int b, int 
   {
     recordmixpixel(i, r, g, b, a);
   }
+}
+
+static void push(Pixel *&top, Pixel *pixel)
+{
+  pixel->prev = top;
+  top = pixel;
+}
+
+static Pixel *pop(Pixel *&top)
+{
+  if (top == nullptr)
+  {
+    return nullptr;
+  }
+
+  Pixel *temp = top;
+  top = temp->prev;
+  return temp;
+}
+
+// Построчный алгоритм заполнения с затравкой
+static void fill_area(int x, int y, int r, int g, int b, int a)
+{
+  Pixel _pixel;
+  _pixel.x = x;
+  _pixel.y = y;
+  Pixel *top = nullptr;
+  push(top, &_pixel);
+
+  while (top != nullptr)
+  {
+    Pixel *pixel = pop(top);
+    mixpixel(pixel->x, pixel->y, r, g, b, a);
+    int temp_x = pixel->x;
+    pixel->x += 1;
+    int i = xytoi(pixel->x, pixel->y);
+    // printf("r: %d g: %d b: %d \n", r, g, b);
+    // printf("r: %d g: %d b: %d \n", buffer_info.bytes[i], buffer_info.bytes[i + 1], buffer_info.bytes[i + 2]);
+    while (buffer_info.bytes[i] != r || buffer_info.bytes[i + 1] != g || buffer_info.bytes[i + 2] != b)
+    {
+      mixpixel(pixel->x, pixel->y, r, g, b, a);
+      pixel->x += 1;
+      i = xytoi(pixel->x, pixel->y);
+      printf("%d %d \n", pixel->x, pixel->y);
+    }
+  }
+
+  // Pixel *new_pixel = pop(top);
+  // printf("%d \n", (int)(new_pixel == nullptr));
+  // push(top, &_pixel1);
+  // printf("%d \n", (int)(top == nullptr));
+  // Pixel *new_pixel = pop(top);
+  // printf("%d \n", new_pixel->x);
+  // printf("%d \n", (int)(top == nullptr));
+  // pop(top);
+  // printf("%d \n", (int)(top == nullptr));
+  // push(top, &_pixel);
+  // printf("%d \n", (int)(top == nullptr));
+
+  // Pixel _pixel1;
+  // _pixel1.x = 10;
+  // _pixel1.y = 5;
+  // _pixel.prev = &_pixel1;
+  //  printf ("%d \n", (int)(_pixel.prev == nullptr));
+  //  printf ("%d \n", _pixel.prev->x);
+  //  printf ("%d \n", _pixel.prev->y);
+  //  printf ("%d \n", (int)(_pixel.prev->prev == nullptr));
+  //  delete _pixel.prev;
+  //  _pixel.prev = nullptr;
+  //  printf ("%d \n", _pixel.prev->x);
+  //  printf ("%d \n", (int)(_pixel.prev == nullptr));
 }
 
 static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a)
@@ -342,6 +420,7 @@ static void plotLineWidth(int x0, int y0, int x1, int y1, float wd, int r, int g
   }
 }
 
+// http://grafika.me/node/38
 static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int a)
 {
   int w = 4;
@@ -1159,9 +1238,11 @@ static int draw_filled_arc(lua_State *L)
 
   // for (size_t i = 1; i <= diameter / 2; i++)
   // {
-    
+
   // }
   DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a, true);
+  float center = (from + to) / 2;
+  fill_area(posx + diameter / 4 * cos(center + M_PI / 2), posy + diameter / 4 * sin(center + M_PI / 2), r, g, b, a);
 
   assert(top == lua_gettop(L));
   return 0;
