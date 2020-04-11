@@ -278,7 +278,7 @@ static void DrawLine(int x0, int y0, int x1, int y1, int r, int g, int b, int a)
 
   for (;;)
   { /* loop */
-    putpixel(x0, y0, r, g, b, a);
+    mixpixel(x0, y0, r, g, b, a);
     if (x0 == x1 && y0 == y1)
       break;
     e2 = 2 * err;
@@ -380,9 +380,9 @@ static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int 
     for (int x = x0 + 1; x < x1; x++)
     {
       //Верхняя точка
-      mixpixel(x, IPart(intery), r, g, b, (int)(255 - FPart(intery) * a));
+      mixpixel(x, IPart(intery), r, g, b, (int)(255 - FPart(intery) * 255) * a / 255);
       //Нижняя точка
-      mixpixel(x, IPart(intery) + 1, r, g, b, (int)(FPart(intery) * a));
+      mixpixel(x, IPart(intery) + 1, r, g, b, (int)(FPart(intery) * 255) * a / 255);
       //Изменение координаты Y
       intery += grad;
     }
@@ -413,11 +413,11 @@ static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int 
 
     for (int y = y0 + 1; y < y1; y++)
     {
-      int intens = (int)(FPart(interx) * a);
+      int intens = (int)(FPart(interx) * 255);
       //Верхняя точка
-      mixpixel(IPart(interx), y, r, g, b, 255 - intens);
+      mixpixel(IPart(interx), y, r, g, b, (255 - intens) * a / 255);
       //Нижняя точка
-      mixpixel(IPart(interx) + 1, y, r, g, b, intens);
+      mixpixel(IPart(interx) + 1, y, r, g, b, intens * a / 255);
       //Изменение координаты X
       interx += grad;
     }
@@ -546,6 +546,7 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
     DrawLineVU(_x, _y, fx + _x, fy + _y, r, g, b, a);
     return;
   }
+
   int tx = radius * cos(to + M_PI / 2);
   int ty = radius * sin(to + M_PI / 2);
   DrawLineVU(_x, _y, fx + _x, fy + _y, r, g, b, a);
@@ -572,8 +573,8 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
-    int intens = (int)((FPart(iy) * 255.0) * a / 255);
-    int inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
+    int intens = is_intens ? (int)((FPart(iy) * 255.0) * a / 255) : a;
+    int inv_intens = is_intens ? (255 - (int)(FPart(iy) * 255)) * a / 255 : a;
     int iiy = IPart(iy);
 
     //IV квадрант, Y
@@ -706,23 +707,23 @@ static void DrawWuFilledCircle(int _x, int _y, int radius, int r, int g, int b, 
     //III квадрант, X
     mixpixel(_x - iiy, _y - x, r, g, b, intens);
     mixpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
-    if (_y - x > _y - first_y + 1  && _y - x != last_iiy3)
+    if (_y - x > _y - first_y + 1 && _y - x != last_iiy3)
     {
       fill_mixed_line(_x - iiy + 1, _x + iiy + 1, _y - x, r, g, b, a);
     }
     // //IV квадрант, X
     mixpixel(_x - iiy, _y + x, r, g, b, intens);
     mixpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
-    if (_y + iiy > _y + first_y  && _y + x != last_iiy4)
+    if (_y + iiy > _y + first_y && _y + x != last_iiy4)
     {
       fill_mixed_line(_x - iiy + 1, _x + iiy + 1, _y + x - 1, r, g, b, a);
     }
     //Возврат значения
     x--;
     last_iiy1 = _y + iiy;
-    last_iiy2 =  _y - iiy + 1;
+    last_iiy2 = _y - iiy + 1;
     last_iiy3 = _y - x + 1;
-    last_iiy4 =  _y + x - 1;
+    last_iiy4 = _y + x - 1;
   }
 }
 
@@ -1156,10 +1157,11 @@ static int draw_filled_arc(lua_State *L)
     a = luaL_checknumber(L, 10);
   }
 
-  for (size_t i = 1; i <= diameter / 2; i++)
-  {
-    DrawArcAA(posx, posy, i, from, to, r, g, b, a, i == diameter / 2);
-  }
+  // for (size_t i = 1; i <= diameter / 2; i++)
+  // {
+    
+  // }
+  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a, true);
 
   assert(top == lua_gettop(L));
   return 0;
