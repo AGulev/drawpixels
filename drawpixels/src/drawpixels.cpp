@@ -295,30 +295,6 @@ static void DrawLine(int x0, int y0, int x1, int y1, int r, int g, int b, int a)
   }
 }
 
-static int draw_line(lua_State *L)
-{
-  int top = lua_gettop(L) + 4;
-
-  read_and_validate_buffer_info(L, 1);
-  int32_t x0 = luaL_checknumber(L, 2);
-  int32_t y0 = luaL_checknumber(L, 3);
-  int32_t x1 = luaL_checknumber(L, 4);
-  int32_t y1 = luaL_checknumber(L, 5);
-  uint32_t r = luaL_checknumber(L, 6);
-  uint32_t g = luaL_checknumber(L, 7);
-  uint32_t b = luaL_checknumber(L, 8);
-  uint32_t a = 0;
-  if (lua_isnumber(L, 9) == 1)
-  {
-    a = luaL_checknumber(L, 9);
-  }
-
-  DrawLine(x0, y0, x1, y1, r, g, b, a);
-
-  assert(top == lua_gettop(L));
-  return 0;
-}
-
 static int IPart(float x) //Целая часть числа
 {
   return (int)x;
@@ -1082,30 +1058,6 @@ static int draw_filled_circle(lua_State *L)
   return 0;
 }
 
-static int draw_wu_line(lua_State *L)
-{
-  int top = lua_gettop(L) + 4;
-
-  read_and_validate_buffer_info(L, 1);
-  int32_t x0 = luaL_checknumber(L, 2);
-  int32_t y0 = luaL_checknumber(L, 3);
-  int32_t x1 = luaL_checknumber(L, 4);
-  int32_t y1 = luaL_checknumber(L, 5);
-  uint32_t r = luaL_checknumber(L, 6);
-  uint32_t g = luaL_checknumber(L, 7);
-  uint32_t b = luaL_checknumber(L, 8);
-  uint32_t a = 0;
-  if (lua_isnumber(L, 9) == 1)
-  {
-    a = luaL_checknumber(L, 9);
-  }
-
-  DrawLineVU(x0, y0, x1, y1, r, g, b, a);
-
-  assert(top == lua_gettop(L));
-  return 0;
-}
-
 static int draw_thick_line(lua_State *L)
 {
   int top = lua_gettop(L) + 4;
@@ -1213,12 +1165,47 @@ static int draw_filled_arc(lua_State *L)
   return 0;
 }
 
+static int draw_line(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x0 = luaL_checknumber(L, 2);
+  int32_t y0 = luaL_checknumber(L, 3);
+  int32_t x1 = luaL_checknumber(L, 4);
+  int32_t y1 = luaL_checknumber(L, 5);
+  uint32_t r = luaL_checknumber(L, 6);
+  uint32_t g = luaL_checknumber(L, 7);
+  uint32_t b = luaL_checknumber(L, 8);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 9) == 1)
+  {
+    a = luaL_checknumber(L, 9);
+  }
+  bool antialiasing = false;
+  if (lua_isboolean(L, 10) == 1)
+  {
+    antialiasing = lua_toboolean(L, 10);
+  }
+
+  if (antialiasing && buffer_info.channels == 4)
+  {
+    DrawLineVU(x0, y0, x1, y1, r, g, b, a);
+  }
+  else
+  {
+    DrawLine(x0, y0, x1, y1, r, g, b, a);
+  }
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
-    {"triangle_AA", draw_triangle},
+    {"triangle", draw_triangle},
     {"line", draw_line},
     {"line_thick", draw_thick_line},
-    {"line_AA", draw_wu_line},
     {"filled_arc", draw_filled_arc},
     {"arc", draw_arc},
     {"circle", draw_circle},
