@@ -11,7 +11,6 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-// #include <list>
 #include <stack>
 
 struct BufferInfo
@@ -34,13 +33,12 @@ struct Point
 
 static bool is_record_point = false;
 static int *points = nullptr;
-// static std::list<Point> points;
 
 static void clear_point()
 {
   if (points != nullptr)
   {
-    delete points;
+    delete[] points;
     points = nullptr;
   }
 }
@@ -211,7 +209,7 @@ static bool is_new(int i, int r, int g, int b)
 
 static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, int r, int g, int b, int a)
 {
-  int MAX = 100000;
+  int MAX = 1000000;
   int count = 0;
   while (pixel.x <= x_right && count <= MAX)
   {
@@ -234,6 +232,7 @@ static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, in
         Point new_pixel;
         new_pixel.x = pixel.x;
         new_pixel.y = pixel.y;
+        // printf("push x == right x: %d y: %d \n", new_pixel.x, new_pixel.y);
         top.push(new_pixel);
       }
       else
@@ -241,6 +240,7 @@ static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, in
         Point new_pixel;
         new_pixel.x = pixel.x - 1;
         new_pixel.y = pixel.y;
+        // printf("push x: %d y: %d \n", new_pixel.x, new_pixel.y);
         top.push(new_pixel);
       }
       flag = 0;
@@ -277,38 +277,42 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
     count++;
     Point pixel = top.top();
     top.pop();
-    // printf("start x: %d y: %d \n", pixel.x, pixel.y);
-    // printf("size: %d\n", (int)top.size());
     mixpixel(pixel.x, pixel.y, r, g, b, a);
+    // printf("count: %d x: %d y: %d \n", count, pixel.x, pixel.y);
     int temp_x = pixel.x;
     pixel.x += 1;
-    int x_right = 0;
-    int x_left = buffer_info.width;
-    // set_border_pixels(pixel.x, pixel.y, x_left, x_right);
-    printf("x_left: %d x_right: %d x_start: %d \n", x_left, x_right, pixel.x);
     while (pixel.x < buffer_info.width && !is_contain(pixel.x, pixel.y) && count <= MAX)
     {
-      // printf("count1: %d\n", count);
-      count++;
+      // count++;
       mixpixel(pixel.x, pixel.y, r, g, b, a);
       pixel.x += 1;
     }
     mixpixel(pixel.x, pixel.y, r, g, b, a);
-    x_right = pixel.x;
+    int x_right = pixel.x;
     pixel.x = temp_x;
     pixel.x -= 1;
     while (pixel.x > -1 && !is_contain(pixel.x, pixel.y) && count <= MAX)
     {
-      // printf("count2: %d\n", count);
-      count++;
+      // count++;
       mixpixel(pixel.x, pixel.y, r, g, b, a);
       pixel.x -= 1;
     }
     mixpixel(pixel.x, pixel.y, r, g, b, a);
-    x_left = pixel.x;
+    pixel.x++;
+    int x_left = pixel.x;
     pixel.y += 1;
+    if (pixel.y >= buffer_info.height)
+    {
+      continue;
+    }
     find_seed_pixel(top, pixel, x_right, r, g, b, a);
     pixel.y -= 2;
+    if (pixel.y <= 0)
+    {
+      continue;
+    }
+
+    pixel.x = x_left;
     find_seed_pixel(top, pixel, x_right, r, g, b, a);
     // printf("count: %d\n", count);
   }
@@ -754,7 +758,7 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
     mixpixel(_x, _y - radius + 1, r, g, b, a);
   }
 
-  for (int x = 0; x <= radius * cos(M_PI / 4); x++)
+  for (int x = 0; x <= radius * cos(M_PI / 4) + 1; x++)
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
@@ -1343,10 +1347,11 @@ static int draw_filled_arc(lua_State *L)
   }
   start_record_points();
   DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
+  DrawLineVU(posx, posy, diameter / 2 * cos(from * 1.0008 + M_PI / 2) + posx, diameter / 2 * sin(from * 1.0008 + M_PI / 2) + posy, r, g, b, a); // fix for all fill some empty pixels TODO CHANGE
+  DrawLineVU(posx, posy, diameter / 2 * cos(to * 0.9992 + M_PI / 2) + posx, diameter / 2 * sin(to * 0.9992 + M_PI / 2) + posy, r, g, b, a);
   float center = (from + to) / 2;
   fill_area(posx + diameter / 4 * cos(center + M_PI / 2), posy + diameter / 4 * sin(center + M_PI / 2), r, g, b, a);
   stop_record_points();
-  // points.clear();
 
   assert(top == lua_gettop(L));
   return 0;
