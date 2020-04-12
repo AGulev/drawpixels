@@ -741,6 +741,9 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   DrawLineVU(_x, _y, tx + _x, ty + _y, r, g, b, a);
   mixpixel(fx + _x, fy + _y, r, g, b, a);
   mixpixel(tx + _x, ty + _y, r, g, b, a);
+  float shift = M_PI * 0.001;
+  from =  from < to ? from - shift : from + shift;
+  to =  from < to ? to + shift : to - shift;
   if (sectorcont(radius, 0, radius, from, to))
   {
     mixpixel(_x + radius, _y, r, g, b, a);
@@ -1347,8 +1350,6 @@ static int draw_filled_arc(lua_State *L)
   }
   start_record_points();
   DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
-  DrawLineVU(posx, posy, diameter / 2 * cos(from * 1.0008 + M_PI / 2) + posx, diameter / 2 * sin(from * 1.0008 + M_PI / 2) + posy, r, g, b, a); // fix for all fill some empty pixels TODO CHANGE
-  DrawLineVU(posx, posy, diameter / 2 * cos(to * 0.9992 + M_PI / 2) + posx, diameter / 2 * sin(to * 0.9992 + M_PI / 2) + posy, r, g, b, a);
   float center = (from + to) / 2;
   fill_area(posx + diameter / 4 * cos(center + M_PI / 2), posy + diameter / 4 * sin(center + M_PI / 2), r, g, b, a);
   stop_record_points();
