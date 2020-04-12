@@ -11,7 +11,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include <list>
+// #include <list>
 #include <stack>
 
 struct BufferInfo
@@ -33,7 +33,34 @@ struct Point
 };
 
 static bool is_record_point = false;
-static std::list<Point> points;
+static int *points = nullptr;
+// static std::list<Point> points;
+
+static void clear_point()
+{
+  if (points != nullptr)
+  {
+    delete points;
+    points = nullptr;
+  }
+}
+
+static void start_record_points()
+{
+  clear_point();
+  is_record_point = true;
+  points = new int[buffer_info.width * buffer_info.height];
+  for (int i = 0; i < buffer_info.width * buffer_info.height; i++)
+  {
+    points[i] = 0;
+  }
+}
+
+static void stop_record_points()
+{
+  is_record_point = false;
+  clear_point();
+}
 
 static int in_buffer(int x, int y)
 {
@@ -100,10 +127,15 @@ static void recordmixpixel(int i, float r, float g, float b, float a)
 
 static void add_point(int x, int y)
 {
-  Point point;
-  point.x = x;
-  point.y = y;
-  points.push_front(point);
+  if (x < 0)
+    x = 0;
+  if (y < 0)
+    y = 0;
+  if (x >= buffer_info.width)
+    x = buffer_info.width - 1;
+  if (y >= buffer_info.height)
+    y = buffer_info.height - 1;
+  points[y * buffer_info.width + x] = 1;
 }
 
 static void mixpixel(int x, int y, float r, float g, float b, float a)
@@ -151,14 +183,25 @@ static void fill_mixed_line(int fromx, int tox, int y, int r, int g, int b, int 
 
 static bool is_contain(int x, int y)
 {
-  for (Point point : points)
-  {
-    if (point.x == x && point.y == y)
-    {
-      return true;
-    }
-  }
-  return false;
+  return points[y * buffer_info.width + x] == 1;
+}
+
+static void set_border_pixels(int x, int y, int &left, int &right)
+{
+  // for (Point point : points)
+  // {
+  //   if (point.y == y)
+  //   {
+  //     if (point.x <= x && point.x <= left)
+  //     {
+  //       left = point.x;
+  //     }
+  //     if (point.x >= x && point.x >= right)
+  //     {
+  //       right = point.x;
+  //     }
+  //   }
+  // }
 }
 
 static bool is_new(int i, int r, int g, int b)
@@ -168,7 +211,7 @@ static bool is_new(int i, int r, int g, int b)
 
 static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, int r, int g, int b, int a)
 {
-  int MAX = 10000;
+  int MAX = 100000;
   int count = 0;
   while (pixel.x <= x_right && count <= MAX)
   {
@@ -202,11 +245,7 @@ static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, in
       }
       flag = 0;
     }
-    // if (is_contain(pixel.x, pixel.y))
-    // {
-      
-    // }
-    
+
     int x_in = pixel.x;
     while (pixel.x < x_right && count <= MAX && is_contain(pixel.x, pixel.y))
     {
@@ -230,7 +269,7 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
   std::stack<Point> top;
   top.push(_pixel);
 
-  int MAX = 10000;
+  int MAX = 100000;
   int count = 0;
 
   while (!top.empty() && count <= MAX)
@@ -238,11 +277,15 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
     count++;
     Point pixel = top.top();
     top.pop();
-    printf("start x: %d y: %d \n", pixel.x, pixel.y);
-    printf("size: %d\n", (int)top.size());
+    // printf("start x: %d y: %d \n", pixel.x, pixel.y);
+    // printf("size: %d\n", (int)top.size());
     mixpixel(pixel.x, pixel.y, r, g, b, a);
     int temp_x = pixel.x;
     pixel.x += 1;
+    int x_right = 0;
+    int x_left = buffer_info.width;
+    // set_border_pixels(pixel.x, pixel.y, x_left, x_right);
+    printf("x_left: %d x_right: %d x_start: %d \n", x_left, x_right, pixel.x);
     while (pixel.x < buffer_info.width && !is_contain(pixel.x, pixel.y) && count <= MAX)
     {
       // printf("count1: %d\n", count);
@@ -251,7 +294,7 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
       pixel.x += 1;
     }
     mixpixel(pixel.x, pixel.y, r, g, b, a);
-    int x_right = pixel.x;
+    x_right = pixel.x;
     pixel.x = temp_x;
     pixel.x -= 1;
     while (pixel.x > -1 && !is_contain(pixel.x, pixel.y) && count <= MAX)
@@ -262,12 +305,12 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
       pixel.x -= 1;
     }
     mixpixel(pixel.x, pixel.y, r, g, b, a);
-    int x_left = pixel.x;
+    x_left = pixel.x;
     pixel.y += 1;
     find_seed_pixel(top, pixel, x_right, r, g, b, a);
     pixel.y -= 2;
     find_seed_pixel(top, pixel, x_right, r, g, b, a);
-    printf("count: %d\n", count);
+    // printf("count: %d\n", count);
   }
 }
 
@@ -688,11 +731,12 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
     return;
   }
 
-  int tx = radius * cos(to + M_PI / 2);
-  int ty = radius * sin(to + M_PI / 2);
+  float tx = radius * cos(to + M_PI / 2);
+  float ty = radius * sin(to + M_PI / 2);
   DrawLineVU(_x, _y, fx + _x, fy + _y, r, g, b, a);
   DrawLineVU(_x, _y, tx + _x, ty + _y, r, g, b, a);
-
+  mixpixel(fx + _x, fy + _y, r, g, b, a);
+  mixpixel(tx + _x, ty + _y, r, g, b, a);
   if (sectorcont(radius, 0, radius, from, to))
   {
     mixpixel(_x + radius, _y, r, g, b, a);
@@ -1297,17 +1341,12 @@ static int draw_filled_arc(lua_State *L)
   {
     a = luaL_checknumber(L, 10);
   }
-
-  // for (size_t i = 1; i <= diameter / 2; i++)
-  // {
-
-  // }
-  is_record_point = true;
+  start_record_points();
   DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
   float center = (from + to) / 2;
   fill_area(posx + diameter / 4 * cos(center + M_PI / 2), posy + diameter / 4 * sin(center + M_PI / 2), r, g, b, a);
-  is_record_point = false;
-  points.clear();
+  stop_record_points();
+  // points.clear();
 
   assert(top == lua_gettop(L));
   return 0;
