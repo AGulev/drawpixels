@@ -11,6 +11,8 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <list>
+#include <stack>
 
 struct BufferInfo
 {
@@ -30,12 +32,8 @@ struct Point
   int y;
 };
 
-struct Pixel
-{
-  int x;
-  int y;
-  Pixel *prev = nullptr;
-};
+static bool is_record_point = false;
+static std::list<Point> points;
 
 static int in_buffer(int x, int y)
 {
@@ -100,12 +98,25 @@ static void recordmixpixel(int i, float r, float g, float b, float a)
   recordtobuffer(i + 3, oa);
 }
 
+static void add_point(int x, int y)
+{
+  Point point;
+  point.x = x;
+  point.y = y;
+  points.push_front(point);
+}
+
 static void mixpixel(int x, int y, float r, float g, float b, float a)
 {
   if (!in_buffer(x, y))
   {
     return;
   }
+  if (is_record_point && a != 0)
+  {
+    add_point(x, y);
+  }
+
   int i = xytoi(x, y);
   if (buffer_info.channels == 3 || buffer_info.bytes[i + 3] == 0 || a == 255)
   {
@@ -138,75 +149,118 @@ static void fill_mixed_line(int fromx, int tox, int y, int r, int g, int b, int 
   }
 }
 
-static void push(Pixel *&top, Pixel *pixel)
+static bool is_contain(int x, int y)
 {
-  pixel->prev = top;
-  top = pixel;
+  for (Point point : points)
+  {
+    if (point.x == x && point.y == y)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
-static Pixel *pop(Pixel *&top)
+static bool is_new(int i, int r, int g, int b)
 {
-  if (top == nullptr)
-  {
-    return nullptr;
-  }
+  return buffer_info.bytes[i] == r && buffer_info.bytes[i + 1] == g && buffer_info.bytes[i + 2] == b;
+}
 
-  Pixel *temp = top;
-  top = temp->prev;
-  return temp;
+static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right)
+{
+  int MAX = 10000;
+  int count = 0;
+  while (pixel.x <= x_right && count <= MAX)
+  {
+    // printf("count3: %d\n", count);
+    count++;
+    int flag = 0;
+    while (pixel.x < x_right && count <= MAX && !is_contain(pixel.x, pixel.y))
+    {
+      count++;
+      if (flag == 0)
+      {
+        flag = 1;
+      }
+      pixel.x += 1;
+    }
+    if (flag == 1)
+    {
+      if (pixel.x == x_right && !is_contain(pixel.x, pixel.y))
+      {
+        Point new_pixel;
+        new_pixel.x = pixel.x;
+        new_pixel.y = pixel.y;
+        top.push(new_pixel);
+      }
+      else
+      {
+        Point new_pixel;
+        new_pixel.x = pixel.x - 1;
+        new_pixel.y = pixel.y;
+        top.push(new_pixel);
+      }
+      flag = 0;
+    }
+    int x_in = pixel.x;
+    while (pixel.x < x_right && count <= MAX && is_contain(pixel.x, pixel.y))
+    {
+      count++;
+      pixel.x += 1;
+    }
+    if (pixel.x == x_in)
+    {
+      pixel.x += 1;
+    }
+  }
 }
 
 // Построчный алгоритм заполнения с затравкой
 static void fill_area(int x, int y, int r, int g, int b, int a)
 {
-  Pixel _pixel;
+  Point _pixel;
   _pixel.x = x;
   _pixel.y = y;
-  Pixel *top = nullptr;
-  push(top, &_pixel);
+  std::stack<Point> top;
+  top.push(_pixel);
 
-  while (top != nullptr)
+  int MAX = 10000;
+  int count = 0;
+
+  while (!top.empty() && count <= MAX)
   {
-    Pixel *pixel = pop(top);
-    mixpixel(pixel->x, pixel->y, r, g, b, a);
-    int temp_x = pixel->x;
-    pixel->x += 1;
-    int i = xytoi(pixel->x, pixel->y);
-    // printf("r: %d g: %d b: %d \n", r, g, b);
-    // printf("r: %d g: %d b: %d \n", buffer_info.bytes[i], buffer_info.bytes[i + 1], buffer_info.bytes[i + 2]);
-    while (buffer_info.bytes[i] != r || buffer_info.bytes[i + 1] != g || buffer_info.bytes[i + 2] != b)
+    count++;
+    Point pixel = top.top();
+    top.pop();
+    printf("start x: %d y: %d \n", pixel.x, pixel.y);
+    printf("size: %d\n", (int)top.size());
+    mixpixel(pixel.x, pixel.y, r, g, b, a);
+    int temp_x = pixel.x;
+    pixel.x += 1;
+    while (pixel.x < buffer_info.width && !is_contain(pixel.x, pixel.y) && count <= MAX)
     {
-      mixpixel(pixel->x, pixel->y, r, g, b, a);
-      pixel->x += 1;
-      i = xytoi(pixel->x, pixel->y);
-      printf("%d %d \n", pixel->x, pixel->y);
+      // printf("count1: %d\n", count);
+      count++;
+      mixpixel(pixel.x, pixel.y, r, g, b, a);
+      pixel.x += 1;
     }
+    int x_right = pixel.x;
+    pixel.x = temp_x;
+    pixel.x -= 1;
+    while (pixel.x > -1 && !is_contain(pixel.x, pixel.y) && count <= MAX)
+    {
+      // printf("count2: %d\n", count);
+      count++;
+      mixpixel(pixel.x, pixel.y, r, g, b, a);
+      pixel.x -= 1;
+    }
+    int x_left = pixel.x;
+    pixel.y += 1;
+    find_seed_pixel(top, pixel, x_right);
+    pixel.y -= 2;
+    find_seed_pixel(top, pixel, x_right);
+    printf("count: %d\n", count);
   }
-
-  // Pixel *new_pixel = pop(top);
-  // printf("%d \n", (int)(new_pixel == nullptr));
-  // push(top, &_pixel1);
-  // printf("%d \n", (int)(top == nullptr));
-  // Pixel *new_pixel = pop(top);
-  // printf("%d \n", new_pixel->x);
-  // printf("%d \n", (int)(top == nullptr));
-  // pop(top);
-  // printf("%d \n", (int)(top == nullptr));
-  // push(top, &_pixel);
-  // printf("%d \n", (int)(top == nullptr));
-
-  // Pixel _pixel1;
-  // _pixel1.x = 10;
-  // _pixel1.y = 5;
-  // _pixel.prev = &_pixel1;
-  //  printf ("%d \n", (int)(_pixel.prev == nullptr));
-  //  printf ("%d \n", _pixel.prev->x);
-  //  printf ("%d \n", _pixel.prev->y);
-  //  printf ("%d \n", (int)(_pixel.prev->prev == nullptr));
-  //  delete _pixel.prev;
-  //  _pixel.prev = nullptr;
-  //  printf ("%d \n", _pixel.prev->x);
-  //  printf ("%d \n", (int)(_pixel.prev == nullptr));
 }
 
 static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a)
@@ -614,7 +668,7 @@ static bool sectorcont(float x, float y, int radius, float from, float to)
   return from <= to && from <= atan && atan <= to || from > to && to <= atan && atan <= from; // x * x + y * y <= radius * radius &&
 }
 
-static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a, bool is_intens)
+static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
 {
 
   float iy = 0;
@@ -652,8 +706,8 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   {
     //Вычисление точного значения координаты Y
     iy = (float)sqrt(radius * radius - x * x);
-    int intens = is_intens ? (int)((FPart(iy) * 255.0) * a / 255) : a;
-    int inv_intens = is_intens ? (255 - (int)(FPart(iy) * 255)) * a / 255 : a;
+    int intens = (int)((FPart(iy) * 255.0) * a / 255);
+    int inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
     int iiy = IPart(iy);
 
     //IV квадрант, Y
@@ -1211,7 +1265,7 @@ static int draw_arc(lua_State *L)
     a = luaL_checknumber(L, 10);
   }
 
-  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a, true);
+  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1240,9 +1294,12 @@ static int draw_filled_arc(lua_State *L)
   // {
 
   // }
-  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a, true);
+  is_record_point = true;
+  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
   float center = (from + to) / 2;
   fill_area(posx + diameter / 4 * cos(center + M_PI / 2), posy + diameter / 4 * sin(center + M_PI / 2), r, g, b, a);
+  is_record_point = false;
+  points.clear();
 
   assert(top == lua_gettop(L));
   return 0;
