@@ -166,7 +166,7 @@ static bool is_new(int i, int r, int g, int b)
   return buffer_info.bytes[i] == r && buffer_info.bytes[i + 1] == g && buffer_info.bytes[i + 2] == b;
 }
 
-static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right)
+static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, int r, int g, int b, int a)
 {
   int MAX = 10000;
   int count = 0;
@@ -202,9 +202,15 @@ static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right)
       }
       flag = 0;
     }
+    // if (is_contain(pixel.x, pixel.y))
+    // {
+      
+    // }
+    
     int x_in = pixel.x;
     while (pixel.x < x_right && count <= MAX && is_contain(pixel.x, pixel.y))
     {
+      mixpixel(pixel.x, pixel.y, r, g, b, a);
       count++;
       pixel.x += 1;
     }
@@ -244,6 +250,7 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
       mixpixel(pixel.x, pixel.y, r, g, b, a);
       pixel.x += 1;
     }
+    mixpixel(pixel.x, pixel.y, r, g, b, a);
     int x_right = pixel.x;
     pixel.x = temp_x;
     pixel.x -= 1;
@@ -254,11 +261,12 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
       mixpixel(pixel.x, pixel.y, r, g, b, a);
       pixel.x -= 1;
     }
+    mixpixel(pixel.x, pixel.y, r, g, b, a);
     int x_left = pixel.x;
     pixel.y += 1;
-    find_seed_pixel(top, pixel, x_right);
+    find_seed_pixel(top, pixel, x_right, r, g, b, a);
     pixel.y -= 2;
-    find_seed_pixel(top, pixel, x_right);
+    find_seed_pixel(top, pixel, x_right, r, g, b, a);
     printf("count: %d\n", count);
   }
 }
