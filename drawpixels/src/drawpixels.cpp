@@ -32,6 +32,13 @@ struct Point
   int y;
 };
 
+struct Color
+{
+  int r;
+  int g;
+  int b;
+};
+
 static bool is_record_point = false;
 static int *points = nullptr;
 
@@ -315,6 +322,134 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
 
     pixel.x = x_left;
     find_seed_pixel(top, pixel, x_right, r, g, b, a);
+    // printf("count: %d\n", count);
+  }
+}
+
+static Color lerp_color(Point center, Point pixel, float fd_2, Color c1, Color c2)
+{
+  Color nc;
+  float coef = (float)((center.x - pixel.x) * (center.x - pixel.x) + (center.y - pixel.y) * (center.y - pixel.y)) / fd_2;
+  nc.r = c1.r + (c2.r - c1.r) * coef;
+  nc.g = c1.g + (c2.g - c1.g) * coef;
+  nc.b = c1.b + (c2.b - c1.b) * coef;
+  return nc;
+}
+
+static void lerppixel(Point center, Point pixel, int fd_2, Color c1, Color c2, int a)
+{
+  Color nc = lerp_color(center, pixel, fd_2, c1, c2);
+  // printf("r: %d g: %d b: %d \n", nc.r, nc.g, nc.b);
+  mixpixel(pixel.x, pixel.y, nc.r, nc.g, nc.b, a);
+}
+
+static void gradient_find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, Point center, int fd_2, Color c1, Color c2, int a)
+{
+  int MAX = 1000000;
+  int count = 0;
+  while (pixel.x <= x_right && count <= MAX)
+  {
+    // printf("count3: %d\n", count);
+    count++;
+    int flag = 0;
+    while (pixel.x < x_right && count <= MAX && !is_contain(pixel.x, pixel.y))
+    {
+      count++;
+      if (flag == 0)
+      {
+        flag = 1;
+      }
+      pixel.x += 1;
+    }
+    if (flag == 1)
+    {
+      if (pixel.x == x_right && !is_contain(pixel.x, pixel.y))
+      {
+        Point new_pixel;
+        new_pixel.x = pixel.x;
+        new_pixel.y = pixel.y;
+        // printf("push x == right x: %d y: %d \n", new_pixel.x, new_pixel.y);
+        top.push(new_pixel);
+      }
+      else
+      {
+        Point new_pixel;
+        new_pixel.x = pixel.x - 1;
+        new_pixel.y = pixel.y;
+        // printf("push x: %d y: %d \n", new_pixel.x, new_pixel.y);
+        top.push(new_pixel);
+      }
+      flag = 0;
+    }
+
+    int x_in = pixel.x;
+    while (pixel.x < x_right && count <= MAX && is_contain(pixel.x, pixel.y))
+    {
+      lerppixel(center, pixel, fd_2, c1, c2, a);
+      count++;
+      pixel.x += 1;
+    }
+    if (pixel.x == x_in)
+    {
+      pixel.x += 1;
+    }
+  }
+}
+
+static void gradient_fill_area(int x, int y, Point center, int fd_2, Color c1, Color c2, int a)
+{
+
+  Point _pixel;
+  _pixel.x = x;
+  _pixel.y = y;
+  std::stack<Point> top;
+  top.push(_pixel);
+
+  int MAX = 100000;
+  int count = 0;
+
+  while (!top.empty() && count <= MAX)
+  {
+    count++;
+    Point pixel = top.top();
+    top.pop();
+    lerppixel(center, pixel, fd_2, c1, c2, a);
+    // printf("count: %d x: %d y: %d \n", count, pixel.x, pixel.y);
+    int temp_x = pixel.x;
+    pixel.x += 1;
+    while (pixel.x < buffer_info.width && !is_contain(pixel.x, pixel.y) && count <= MAX)
+    {
+      // count++;
+      lerppixel(center, pixel, fd_2, c1, c2, a);
+      pixel.x += 1;
+    }
+    lerppixel(center, pixel, fd_2, c1, c2, a);
+    int x_right = pixel.x;
+    pixel.x = temp_x;
+    pixel.x -= 1;
+    while (pixel.x > -1 && !is_contain(pixel.x, pixel.y) && count <= MAX)
+    {
+      // count++;
+      lerppixel(center, pixel, fd_2, c1, c2, a);
+      pixel.x -= 1;
+    }
+    lerppixel(center, pixel, fd_2, c1, c2, a);
+    pixel.x++;
+    int x_left = pixel.x;
+    pixel.y += 1;
+    if (pixel.y >= buffer_info.height)
+    {
+      continue;
+    }
+    gradient_find_seed_pixel(top, pixel, x_right, center, fd_2, c1, c2, a);
+    pixel.y -= 2;
+    if (pixel.y <= 0)
+    {
+      continue;
+    }
+
+    pixel.x = x_left;
+    gradient_find_seed_pixel(top, pixel, x_right, center, fd_2, c1, c2, a);
     // printf("count: %d\n", count);
   }
 }
@@ -1398,6 +1533,51 @@ static int draw_filled_arc(lua_State *L)
   return 0;
 }
 
+static int draw_gradient_arc(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
+  float from = luaL_checknumber(L, 5);
+  float to = luaL_checknumber(L, 6);
+  uint32_t r1 = luaL_checknumber(L, 7);
+  uint32_t g1 = luaL_checknumber(L, 8);
+  uint32_t b1 = luaL_checknumber(L, 9);
+  uint32_t r2 = luaL_checknumber(L, 10);
+  uint32_t g2 = luaL_checknumber(L, 11);
+  uint32_t b2 = luaL_checknumber(L, 12);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 13) == 1)
+  {
+    a = luaL_checknumber(L, 13);
+  }
+  start_record_points();
+  DrawFixedArc(posx, posy, diameter, from, to, r2, g2, b2, a);
+  float center = (from + to) / 2;
+  center = from > to ? center - M_PI / 2 : center + M_PI / 2;
+
+  Color c1;
+  c1.r = r1;
+  c1.g = g1;
+  c1.b = b1;
+  Color c2;
+  c2.r = r2;
+  c2.g = g2;
+  c2.b = b2;
+  Point center_point;
+  center_point.x = posx;
+  center_point.y = posy;
+
+  gradient_fill_area(posx + diameter / 4 * cos(center), posy + diameter / 4 * sin(center), center_point, (diameter / 2) * (diameter / 2), c1, c2, a);
+  stop_record_points();
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 static int draw_line(lua_State *L)
 {
   int top = lua_gettop(L) + 4;
@@ -1436,6 +1616,7 @@ static int draw_line(lua_State *L)
 
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
+    {"gradient_arc", draw_gradient_arc},
     {"triangle", draw_triangle},
     {"line", draw_line},
     {"line_thick", draw_thick_line},
