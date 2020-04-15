@@ -4,6 +4,7 @@
 
 #define DLIB_LOG_DOMAIN LIB_NAME
 #define M_PI 3.14159265358979323846
+#define M_PI_2 M_PI * 2
 
 #include <dmsdk/sdk.h>
 #include <math.h>
@@ -720,12 +721,21 @@ static bool sectorcont(float x, float y, int radius, float from, float to)
   {
     atan = M_PI * 2 + atan;
   }
-  return from <= to && from <= atan && atan <= to || from > to && to <= atan && atan <= from; // x * x + y * y <= radius * radius &&
+  if (from <= to)
+  {
+    return from <= atan && atan <= to;
+  }
+  else
+  {
+    // printf("count: %f %f %f\n", from, to, atan);
+    return to >= atan || atan >= from;
+  }
+  // return from <= to && from <= atan && atan <= to || from > to && to <= atan && atan <= from;
 }
 
 static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
 {
-
+  printf("count: %f %f\n", from, to);
   float iy = 0;
   float fx = radius * cos(from + M_PI / 2);
   float fy = radius * sin(from + M_PI / 2);
@@ -741,9 +751,11 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   DrawLineVU(_x, _y, tx + _x, ty + _y, r, g, b, a);
   mixpixel(fx + _x, fy + _y, r, g, b, a);
   mixpixel(tx + _x, ty + _y, r, g, b, a);
-  float shift = M_PI * 0.001;
-  from =  from < to ? from - shift : from + shift;
-  to =  from < to ? to + shift : to - shift;
+  // from -= M_PI / 2;
+  // to -= M_PI / 2;
+  float shift = M_PI * 0.0005;
+  from = from - shift;
+  to = to + shift;
   if (sectorcont(radius, 0, radius, from, to))
   {
     mixpixel(_x + radius, _y, r, g, b, a);
@@ -1260,7 +1272,7 @@ static int draw_thick_line(lua_State *L)
   int32_t y0 = luaL_checknumber(L, 3);
   int32_t x1 = luaL_checknumber(L, 4);
   int32_t y1 = luaL_checknumber(L, 5);
-  int32_t w = luaL_checknumber(L, 6);
+  float w = luaL_checknumber(L, 6);
   uint32_t r = luaL_checknumber(L, 7);
   uint32_t g = luaL_checknumber(L, 8);
   uint32_t b = luaL_checknumber(L, 9);
@@ -1324,7 +1336,31 @@ static int draw_arc(lua_State *L)
     a = luaL_checknumber(L, 10);
   }
 
-  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
+  float radius = diameter / 2;
+  if (abs(from - to) >= M_PI_2)
+  {
+    float fx = radius * cos(from);
+    float fy = radius * sin(from);
+    DrawLineVU(posx, posy, fx + posx, fy + posy, r, g, b, a);
+    DrawWuCircle(posx, posy, radius, r, g, b, a);
+  }
+  else
+  {
+    from -= M_PI / 2;
+    to -= M_PI / 2;
+    from = from >= M_PI_2 ? from - (((int)(from / M_PI_2)) * M_PI_2) : from;
+    to = to >= M_PI_2 ? to - (((int)(to / M_PI_2)) * M_PI_2) : to;
+    if (to < from && to < 0 && from < 0)
+    {
+      float temp = to;
+      to = from;
+      from = temp;
+    }
+
+    from = from < 0 ? from + M_PI_2 : from;
+    to = to < 0 ? to + M_PI_2 : to;
+    DrawArcAA(posx, posy, radius, from, to, r, g, b, a);
+  }
 
   assert(top == lua_gettop(L));
   return 0;
