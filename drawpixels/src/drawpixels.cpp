@@ -735,7 +735,6 @@ static bool sectorcont(float x, float y, int radius, float from, float to)
 
 static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
 {
-  printf("count: %f %f\n", from, to);
   float iy = 0;
   float fx = radius * cos(from + M_PI / 2);
   float fy = radius * sin(from + M_PI / 2);
@@ -751,9 +750,7 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   DrawLineVU(_x, _y, tx + _x, ty + _y, r, g, b, a);
   mixpixel(fx + _x, fy + _y, r, g, b, a);
   mixpixel(tx + _x, ty + _y, r, g, b, a);
-  // from -= M_PI / 2;
-  // to -= M_PI / 2;
-  float shift = M_PI * 0.0005;
+  float shift = M_PI * 0.0007;
   from = from - shift;
   to = to + shift;
   if (sectorcont(radius, 0, radius, from, to))
@@ -1317,25 +1314,8 @@ static int draw_triangle(lua_State *L)
   return 0;
 }
 
-static int draw_arc(lua_State *L)
+static void DrawFixedArc(int32_t posx, int32_t posy, int32_t diameter, float &from, float &to, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
 {
-  int top = lua_gettop(L) + 4;
-
-  read_and_validate_buffer_info(L, 1);
-  int32_t posx = luaL_checknumber(L, 2);
-  int32_t posy = luaL_checknumber(L, 3);
-  int32_t diameter = luaL_checknumber(L, 4);
-  float from = luaL_checknumber(L, 5);
-  float to = luaL_checknumber(L, 6);
-  uint32_t r = luaL_checknumber(L, 7);
-  uint32_t g = luaL_checknumber(L, 8);
-  uint32_t b = luaL_checknumber(L, 9);
-  uint32_t a = 0;
-  if (lua_isnumber(L, 10) == 1)
-  {
-    a = luaL_checknumber(L, 10);
-  }
-
   float radius = diameter / 2;
   if (abs(from - to) >= M_PI_2)
   {
@@ -1361,6 +1341,28 @@ static int draw_arc(lua_State *L)
     to = to < 0 ? to + M_PI_2 : to;
     DrawArcAA(posx, posy, radius, from, to, r, g, b, a);
   }
+}
+
+static int draw_arc(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t posx = luaL_checknumber(L, 2);
+  int32_t posy = luaL_checknumber(L, 3);
+  int32_t diameter = luaL_checknumber(L, 4);
+  float from = luaL_checknumber(L, 5);
+  float to = luaL_checknumber(L, 6);
+  uint32_t r = luaL_checknumber(L, 7);
+  uint32_t g = luaL_checknumber(L, 8);
+  uint32_t b = luaL_checknumber(L, 9);
+  uint32_t a = 0;
+  if (lua_isnumber(L, 10) == 1)
+  {
+    a = luaL_checknumber(L, 10);
+  }
+
+  DrawFixedArc(posx, posy, diameter, from, to, r, g, b, a);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1385,9 +1387,11 @@ static int draw_filled_arc(lua_State *L)
     a = luaL_checknumber(L, 10);
   }
   start_record_points();
-  DrawArcAA(posx, posy, diameter / 2, from, to, r, g, b, a);
+  DrawFixedArc(posx, posy, diameter, from, to, r, g, b, a);
   float center = (from + to) / 2;
-  fill_area(posx + diameter / 4 * cos(center + M_PI / 2), posy + diameter / 4 * sin(center + M_PI / 2), r, g, b, a);
+  center = from > to ? center - M_PI / 2 : center + M_PI / 2;
+
+  fill_area(posx + diameter / 4 * cos(center), posy + diameter / 4 * sin(center), r, g, b, a);
   stop_record_points();
 
   assert(top == lua_gettop(L));
