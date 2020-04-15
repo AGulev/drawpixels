@@ -339,7 +339,6 @@ static Color lerp_color(Point center, Point pixel, float fd_2, Color c1, Color c
 static void lerppixel(Point center, Point pixel, int fd_2, Color c1, Color c2, int a)
 {
   Color nc = lerp_color(center, pixel, fd_2, c1, c2);
-  // printf("r: %d g: %d b: %d \n", nc.r, nc.g, nc.b);
   mixpixel(pixel.x, pixel.y, nc.r, nc.g, nc.b, a);
 }
 
@@ -750,6 +749,102 @@ static void DrawLineVU(int x0, int y0, int x1, int y1, int r, int g, int b, int 
   }
 }
 
+static void DrawGradientLineVU(int x0, int y0, int x1, int y1, Color c1, Color c2, int a)
+{
+  Point center;
+  center.x = x0;
+  center.y = y0;
+  int fd_2 = (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
+  int w = 4;
+  //Вычисление изменения координат
+  int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
+  int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
+  //Если линия параллельна одной из осей, рисуем обычную линию - заполняем все пикселы в ряд
+  // if (dx == 0 || dy == 0)
+  // {
+  //   DrawLine(x0, y0, x1, y1, r, g, b, a);
+  //   return;
+  // }
+
+  //Для Х-линии (коэффициент наклона < 1)
+  if (dy < dx)
+  {
+    //Первая точка должна иметь меньшую координату Х
+    if (x1 < x0)
+    {
+      x1 += x0;
+      x0 = x1 - x0;
+      x1 -= x0;
+      y1 += y0;
+      y0 = y1 - y0;
+      y1 -= y0;
+    }
+    //Относительное изменение координаты Y
+    float grad = (float)dy / dx;
+    if (y1 < y0)
+      grad = -grad;
+    //Промежуточная переменная для Y
+    float intery = y0 + grad;
+    //Первая точка
+    mixpixel(x0, y0, c1.r, c1.g, c1.b, a);
+
+    for (int x = x0 + 1; x < x1; x++)
+    {
+      //Верхняя точка
+      Point pixel;
+      pixel.x = x;
+      pixel.y = IPart(intery);
+      lerppixel(center, pixel, fd_2, c1, c2, (int)(255 - FPart(intery) * 255) * a / 255);
+      //Нижняя точка
+      pixel.y += 1;
+      lerppixel(center, pixel, fd_2, c1, c2, (int)(FPart(intery) * 255) * a / 255);
+      //Изменение координаты Y
+      intery += grad;
+    }
+    //Последняя точка
+    mixpixel(x1, y1, c2.r, c2.g, c2.b, a);
+  }
+  //Для Y-линии (коэффициент наклона > 1)
+  else
+  {
+    //Первая точка должна иметь меньшую координату Y
+    if (y1 < y0)
+    {
+      x1 += x0;
+      x0 = x1 - x0;
+      x1 -= x0;
+      y1 += y0;
+      y0 = y1 - y0;
+      y1 -= y0;
+    }
+    //Относительное изменение координаты X
+    float grad = (float)dx / dy;
+    if (x1 < x0)
+      grad = -grad;
+    //Промежуточная переменная для X
+    float interx = x0 + grad;
+    //Первая точка
+    mixpixel(x0, y0, c1.r, c1.g, c1.b, a);
+
+    for (int y = y0 + 1; y < y1; y++)
+    {
+      int intens = (int)(FPart(interx) * 255);
+      //Верхняя точка
+      Point pixel;
+      pixel.x = IPart(interx);
+      pixel.y = y;
+      lerppixel(center, pixel, fd_2, c1, c2, (255 - intens) * a / 255);
+      //Нижняя точка
+      pixel.x += 1;
+      lerppixel(center, pixel, fd_2, c1, c2, intens * a / 255);
+      //Изменение координаты X
+      interx += grad;
+    }
+    //Последняя точка
+    mixpixel(x1, y1, c2.r, c2.g, c2.b, a);
+  }
+}
+
 static int draw_pixel(lua_State *L)
 {
   int top = lua_gettop(L) + 4;
@@ -868,9 +963,8 @@ static bool sectorcont(float x, float y, int radius, float from, float to)
   // return from <= to && from <= atan && atan <= to || from > to && to <= atan && atan <= from;
 }
 
-static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
+static void DrawArcLines(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
 {
-  float iy = 0;
   float fx = radius * cos(from + M_PI / 2);
   float fy = radius * sin(from + M_PI / 2);
   if (from == to)
@@ -885,6 +979,34 @@ static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, i
   DrawLineVU(_x, _y, tx + _x, ty + _y, r, g, b, a);
   mixpixel(fx + _x, fy + _y, r, g, b, a);
   mixpixel(tx + _x, ty + _y, r, g, b, a);
+}
+
+static void DrawGradientArcLines(int _x, int _y, int radius, float from, float to, Color c1, Color c2, int a)
+{
+  float fx = radius * cos(from + M_PI / 2);
+  float fy = radius * sin(from + M_PI / 2);
+  if (from == to)
+  {
+    DrawGradientLineVU(_x, _y, fx + _x, fy + _y, c1, c2, a);
+    return;
+  }
+
+  float tx = radius * cos(to + M_PI / 2);
+  float ty = radius * sin(to + M_PI / 2);
+  DrawGradientLineVU(_x, _y, fx + _x, fy + _y, c1, c2, a);
+  DrawGradientLineVU(_x, _y, tx + _x, ty + _y, c1, c2, a);
+  mixpixel(fx + _x, fy + _y, c1.r, c1.g, c1.b, a);
+  mixpixel(tx + _x, ty + _y, c2.r, c2.g, c2.b, a);
+}
+
+static void DrawArcAA(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
+{
+  if (from == to)
+  {
+    return;
+  }
+  
+  float iy = 0;
   float shift = M_PI * 0.0007;
   from = from - shift;
   to = to + shift;
@@ -1456,7 +1578,7 @@ static void DrawFixedArc(int32_t posx, int32_t posy, int32_t diameter, float &fr
   {
     float fx = radius * cos(from);
     float fy = radius * sin(from);
-    DrawLineVU(posx, posy, fx + posx, fy + posy, r, g, b, a);
+    // DrawLineVU(posx, posy, fx + posx, fy + posy, r, g, b, a);
     DrawWuCircle(posx, posy, radius, r, g, b, a);
   }
   else
@@ -1498,6 +1620,7 @@ static int draw_arc(lua_State *L)
   }
 
   DrawFixedArc(posx, posy, diameter, from, to, r, g, b, a);
+  DrawArcLines(posx, posy, diameter / 2, from, to, r, g, b, a);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1523,6 +1646,8 @@ static int draw_filled_arc(lua_State *L)
   }
   start_record_points();
   DrawFixedArc(posx, posy, diameter, from, to, r, g, b, a);
+  DrawArcLines(posx, posy, diameter / 2, from, to, r, g, b, a);
+
   float center = (from + to) / 2;
   center = from > to ? center - M_PI / 2 : center + M_PI / 2;
 
@@ -1554,10 +1679,6 @@ static int draw_gradient_arc(lua_State *L)
   {
     a = luaL_checknumber(L, 13);
   }
-  start_record_points();
-  DrawFixedArc(posx, posy, diameter, from, to, r2, g2, b2, a);
-  float center = (from + to) / 2;
-  center = from > to ? center - M_PI / 2 : center + M_PI / 2;
 
   Color c1;
   c1.r = r1;
@@ -1567,6 +1688,13 @@ static int draw_gradient_arc(lua_State *L)
   c2.r = r2;
   c2.g = g2;
   c2.b = b2;
+  start_record_points();
+  DrawFixedArc(posx, posy, diameter, from, to, r2, g2, b2, a);
+  DrawGradientArcLines(posx, posy, diameter / 2, from, to, c1, c2, a);
+
+  float center = (from + to) / 2;
+  center = from > to ? center - M_PI / 2 : center + M_PI / 2;
+
   Point center_point;
   center_point.x = posx;
   center_point.y = posy;
