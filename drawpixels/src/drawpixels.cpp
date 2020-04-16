@@ -4,7 +4,6 @@
 
 #define DLIB_LOG_DOMAIN LIB_NAME
 #define M_PI 3.14159265358979323846
-#define M_PI_2 M_PI * 2
 
 #include <dmsdk/sdk.h>
 #include <math.h>
@@ -39,6 +38,7 @@ struct Color
   int b;
 };
 
+static float PI_2 = M_PI * 2;
 static bool is_record_point = false;
 static int *points = nullptr;
 
@@ -1574,7 +1574,7 @@ static int draw_triangle(lua_State *L)
 static void DrawFixedArc(int32_t posx, int32_t posy, int32_t diameter, float &from, float &to, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
 {
   float radius = diameter / 2;
-  if (abs(from - to) >= M_PI_2)
+  if (abs(from - to) >= PI_2)
   {
     float fx = radius * cos(from);
     float fy = radius * sin(from);
@@ -1585,8 +1585,8 @@ static void DrawFixedArc(int32_t posx, int32_t posy, int32_t diameter, float &fr
   {
     from -= M_PI / 2;
     to -= M_PI / 2;
-    from = from >= M_PI_2 ? from - (((int)(from / M_PI_2)) * M_PI_2) : from;
-    to = to >= M_PI_2 ? to - (((int)(to / M_PI_2)) * M_PI_2) : to;
+    from = from >= PI_2 ? from - (((int)(from / PI_2)) * PI_2) : from;
+    to = to >= PI_2 ? to - (((int)(to / PI_2)) * PI_2) : to;
     if (to < from && to < 0 && from < 0)
     {
       float temp = to;
@@ -1594,8 +1594,8 @@ static void DrawFixedArc(int32_t posx, int32_t posy, int32_t diameter, float &fr
       from = temp;
     }
 
-    from = from < 0 ? from + M_PI_2 : from;
-    to = to < 0 ? to + M_PI_2 : to;
+    from = from < 0 ? from + PI_2 : from;
+    to = to < 0 ? to + PI_2 : to;
     DrawArcAA(posx, posy, radius, from, to, r, g, b, a);
   }
 }
