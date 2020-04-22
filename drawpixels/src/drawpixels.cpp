@@ -1017,9 +1017,8 @@ static void draw_normalized_arc(int32_t posx, int32_t posy, int32_t radius, floa
       to = from;
       from = temp;
     }
-
-    from = from < 0 ? from + PI_2 : from;
-    to = to < 0 ? to + PI_2 : to;
+    from = from < 0 ? (from - PI_2 * (int)(from / PI_2)) + PI_2 : from;
+    to = to < 0 ? (to - PI_2 * (int)(to / PI_2)) + PI_2 : to;
     draw_arc_vu(posx, posy, radius, from, to, r, g, b, a);
   }
 }

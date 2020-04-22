@@ -219,8 +219,7 @@ Draw a bezier line between two points and one control point:
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures<br />
 
-You can fill in a specific area. To do this, you need to identify the borders with `start_fill` method and call the `fill_area` method to fill the area. Borders work with: lines, gradient lines, circles, filled circles with anti-aliasing, pixels.
-<b>NOT WORK WITH ARCS.</b> The arcs themselves use this method, so the fill may not be predictable. Do not create arcs until you are done with the fill. Be sure to call the `end_fill` method when you stop working with the fill.
+You can fill in a specific area. To do this, you need to identify the borders with `start_fill` method and call the `fill_area` method to fill the area. Borders work with: lines, gradient lines, circles, filled circles with anti-aliasing, pixels, arcs. <b>NOT WORK WITH FILLED ARCS AND GRADIENT ARCS.</b> The arcs themselves use this method, so the fill may not be predictable. Do not create arcs until you are done with the fill. Be sure to call the `end_fill` method when you stop working with the fill.
 
 #### drawpixels.start_fill()
 Indicates the start of border preservation.
