@@ -238,6 +238,22 @@ Fills an area at specified boundaries. Only for 4 channels:
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255<br />
 
+In order to draw this into a sprite, you need a separate atlas with power of two texture. Then we can use `resource.set_texture`:
+
+```lua
+resource.set_texture(go.get("#sprite", "texture0"), self.header, self.buffer_info.buffer)
+```
+
+In order to render this in gui, we just need to create a box and create a new texture.
+We can use `gui.new_texture`. Then you need to set this texture to the box using `gui.set_texture`:
+
+```lua
+local data = buffer.get_bytes(self.buffer_info.buffer, hash("rgba"))
+gui.new_texture("name", width, height, image.TYPE_RGBA, data)
+gui.set_texture(gui.get_node("box"), "name")
+gui.set_size(gui.get_node("box"), vmath.vector3(width, height, 0))
+```
+
 --------
 
 If you have any questions or suggestions contact me: me@agulev.com

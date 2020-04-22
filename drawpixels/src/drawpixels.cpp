@@ -881,8 +881,6 @@ static void draw_gradient_arc_lines(int _x, int _y, int radius, float from, floa
   float ty = radius * sin(to + M_PI / 2);
   draw_gradient_line_vu(_x, _y, fx + _x, fy + _y, c1, c2, a, 1);
   draw_gradient_line_vu(_x, _y, tx + _x, ty + _y, c1, c2, a, 1);
-  // mixpixel(fx + _x, fy + _y, c1.r, c1.g, c1.b, a);
-  // mixpixel(tx + _x, ty + _y, c2.r, c2.g, c2.b, a);
 }
 
 static void draw_arc_lines(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
@@ -899,8 +897,6 @@ static void draw_arc_lines(int _x, int _y, int radius, float from, float to, int
   float ty = radius * sin(to + M_PI / 2);
   draw_line_vu(_x, _y, fx + _x, fy + _y, r, g, b, a, 1);
   draw_line_vu(_x, _y, tx + _x, ty + _y, r, g, b, a, 1);
-  // mixpixel(fx + _x, fy + _y, r, g, b, a);
-  // mixpixel(tx + _x, ty + _y, r, g, b, a);
 }
 
 static void draw_arc_vu(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
