@@ -40,7 +40,7 @@ local buffer_info = {
 ```
 Then when you have a buffer info, you can use next methods:
 
-#### drawpixels.circle(buffer_info, pox_x, pox_y, diameter, red, green, blue, alpha)
+#### drawpixels.circle(buffer_info, pox_x, pox_y, diameter, red, green, blue, alpha, antialiasing)
 Method for drawing circle:
 
 `buffer_info` - buffer information<br />
@@ -51,8 +51,9 @@ Method for drawing circle:
 `green` - green channel of the color 0..255<br />
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures<br />
+`antialiasing` - adds anti-aliasing. Only for 4 channels. Optional parameter.<br />
 
-#### drawpixels.filled_circle(buffer_info, pos_x, pos_y, diameter, red, green, blue, alpha)
+#### drawpixels.filled_circle(buffer_info, pos_x, pos_y, diameter, red, green, blue, alpha, antialiasing)
 Method for drawing filled circle:
 
 `buffer_info` - buffer information<br />
@@ -63,6 +64,7 @@ Method for drawing filled circle:
 `green` - green channel of the color 0..255<br />
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures<br />
+`antialiasing` - adds anti-aliasing. Only for 4 channels. Optional parameter.<br />
 
 #### drawpixels.rect(buffer_info, pos_x, pos_y, rect_width, rect_height, red, green, blue, alpha)
 Method for drawing rectangle:
@@ -100,7 +102,7 @@ Fill buffer with the color:
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures<br />
 
-#### drawpixels.line(buffer_info, x0, y0, x1, y1, red, green, blue, alpha)
+#### drawpixels.line(buffer_info, x0, y0, x1, y1, red, green, blue, alpha, antialiasing, width)
 Draw a line between two points:
 
 `buffer_info` - buffer information<br />
@@ -112,6 +114,70 @@ Draw a line between two points:
 `green` - green channel of the color 0..255<br />
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures<br />
+`antialiasing` - adds anti-aliasing. Only for 4 channels. Optional parameter.<br />
+`width` - indicates the line width. Only for line with anti-aliasing. Optional parameter.<br />
+
+#### drawpixels.gradient_line(buffer_info, x0, y0, x1, y1, red1, green1, blue1, red2, green2, blue2, alpha, width)
+Draw a gradient line with anti-aliasing between two points. Only for 4 channels:
+
+`buffer_info` - buffer information<br />
+`x0` - x position of one end of the line<br />
+`y0` - y position of one end of the line<br />
+`x1` - x position of the other end of the line<br />
+`y1` - y position of the other end of the line<br />
+`red1` - first red channel of the color 0..255<br />
+`green1` - first green channel of the color 0..255<br />
+`blue1` - first blue channel of the color 0..255<br />
+`red2` - second red channel of the color 0..255<br />
+`green2` - second green channel of the color 0..255<br />
+`blue2` - second blue channel of the color 0..255<br />
+`alpha` - alpha channel 0..255<br />
+`width` - indicates the line width. Only for line with anti-aliasing. Optional parameter.<br />
+
+#### drawpixels.arc(buffer_info, x, y, radius, from, to, red, green, blue, alpha)
+Draw a arc between two corners. If from < to the arc is drawn counterclockwise. If from > to the arc is drawn clockwise. Only for 4 channels:
+
+`buffer_info` - buffer information<br />
+`x` - x position center of the circle<br />
+`y` - y position center of the circle<br />
+`radius` - radius of the circle<br />
+`from` - first arc angle in radians. May be negative<br />
+`to` - second arc angle in radians. May be negative<br />
+`red` - red channel of the color 0..255<br />
+`green` - green channel of the color 0..255<br />
+`blue` - blue channel of the color 0..255<br />
+`alpha` - alpha channel 0..255<br />
+
+#### drawpixels.filled_arc(buffer_info, x, y, radius, from, to, red, green, blue, alpha)
+Draw a filled arc between two corners. If from < to the arc is drawn counterclockwise. If from > to the arc is drawn clockwise. Only for 4 channels:
+
+`buffer_info` - buffer information<br />
+`x` - x position center of the circle<br />
+`y` - y position center of the circle<br />
+`radius` - radius of the circle<br />
+`from` - first arc angle in radians. May be negative<br />
+`to` - second arc angle in radians. May be negative<br />
+`red` - red channel of the color 0..255<br />
+`green` - green channel of the color 0..255<br />
+`blue` - blue channel of the color 0..255<br />
+`alpha` - alpha channel 0..255<br />
+
+#### drawpixels.gradient_arc(buffer_info, x, y, radius, from, to, red1, green1, blue1, red2, green2, blue2, alpha)
+Draw a gradient arc between two corners. If from < to the arc is drawn counterclockwise. If from > to the arc is drawn clockwise. Only for 4 channels:
+
+`buffer_info` - buffer information<br />
+`x` - x position center of the circle<br />
+`y` - y position center of the circle<br />
+`radius` - radius of the circle<br />
+`from` - first arc angle in radians. May be negative<br />
+`to` - second arc angle in radians. May be negative<br />
+`red1` - first red channel of the color 0..255<br />
+`green1` - first green channel of the color 0..255<br />
+`blue1` - first blue channel of the color 0..255<br />
+`red2` - second red channel of the color 0..255<br />
+`green2` - second green channel of the color 0..255<br />
+`blue2` - second blue channel of the color 0..255<br />
+`alpha` - alpha channel 0..255<br />
 
 #### drawpixels.pixel(buffer_info, x, y, red, green, blue, alpha)
 Draw a pixel:
@@ -152,6 +218,26 @@ Draw a bezier line between two points and one control point:
 `green` - green channel of the color 0..255<br />
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures<br />
+
+You can fill in a specific area. To do this, you need to identify the borders with `start_fill` method and call the `fill_area` method to fill the area. Borders work with: lines, gradient lines, circles, filled circles with anti-aliasing, pixels.
+<b>NOT WORK WITH ARCS.</b> The arcs themselves use this method, so the fill may not be predictable. Do not create arcs until you are done with the fill. Be sure to call the `end_fill` method when you stop working with the fill.
+
+#### drawpixels.start_fill()
+Indicates the start of border preservation.
+
+#### drawpixels.end_fill()
+Indicates the stop of border preservation.
+
+#### drawpixels.fill_area(buffer_info, x, y, red, green, blue, alpha)
+Fills an area at specified boundaries. Only for 4 channels:
+
+`buffer_info` - buffer information<br />
+`x` - x position of the start point<br />
+`y` - y position of the start point<br />
+`red` - red channel of the color 0..255<br />
+`green` - green channel of the color 0..255<br />
+`blue` - blue channel of the color 0..255<br />
+`alpha` - alpha channel 0..255<br />
 
 --------
 
