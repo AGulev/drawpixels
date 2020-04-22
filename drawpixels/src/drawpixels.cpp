@@ -202,6 +202,14 @@ static Color lerp_color(Point center, Point pixel, float fd_2, Color c1, Color c
 {
   Color nc;
   float coef = (float)((center.x - pixel.x) * (center.x - pixel.x) + (center.y - pixel.y) * (center.y - pixel.y)) / fd_2;
+  if (coef <= 0)
+  {
+    return c1;
+  }
+  if (coef >= 1)
+  {
+    return c2;
+  }
   nc.r = c1.r + (c2.r - c1.r) * coef;
   nc.g = c1.g + (c2.g - c1.g) * coef;
   nc.b = c1.b + (c2.b - c1.b) * coef;
@@ -592,15 +600,25 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
 {
   int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
   int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
-  if (dx == 0 || dy == 0)
+  int w_min = ceilf(w / 2) - 1;
+  int w_max = w / 2 + 1;
+  if (dx == 0)
   {
-    draw_line(x0, y0, x1, y1, r, g, b, a);
+    for (size_t i = w_min; i < w_max; i++)
+    {
+      draw_line(x0 + i, y0, x1 + i, y1, r, g, b, a);
+    }
+    return;
+  }
+  if (dy == 0)
+  {
+    for (size_t i = w_min; i < w_max; i++)
+    {
+      draw_line(x0, y0 + i, x1, y1 + i, r, g, b, a);
+    }
     return;
   }
   float na = (float)a / 255;
-
-  int w_min = ceil(w / 2) - 1;
-  int w_max = w / 2 + 1;
 
   if (dy < dx)
   {
@@ -633,7 +651,6 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
         mixpixel(x, ipart + i, r, g, b, a);
       }
       mixpixel(x, ipart + w_max, r, g, b, intens * na);
-
       intery += grad;
     }
     for (int i = -w_min; i < w_max; i++)
@@ -681,15 +698,17 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
   }
 }
 
-static void draw_gradient_line_vu(int x0, int y0, int x1, int y1, Color c1, Color c2, int a)
+static void draw_gradient_line_vu(int x0, int y0, int x1, int y1, Color c1, Color c2, int a, float w)
 {
   Point center;
   center.x = x0;
   center.y = y0;
   int fd_2 = (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
-  int w = 4;
+  int w_min = ceilf(w / 2) - 1;
+  int w_max = w / 2 + 1;
   int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
   int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
+  float na = (float)a / 255;
   if (dy < dx)
   {
     if (x1 < x0)
@@ -705,18 +724,34 @@ static void draw_gradient_line_vu(int x0, int y0, int x1, int y1, Color c1, Colo
     if (y1 < y0)
       grad = -grad;
     float intery = y0 + grad;
-    mixpixel(x0, y0, c1.r, c1.g, c1.b, a);
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x0, y0 + i, c1.r, c1.g, c1.b, a);
+    }
+    Point pixel;
+    float intens = 0;
+    int ipart = 0;
     for (int x = x0 + 1; x < x1; x++)
     {
-      Point pixel;
+      intens = FPart(intery) * 255;
+      ipart = IPart(intery);
       pixel.x = x;
-      pixel.y = IPart(intery);
-      lerp_pixel(center, pixel, fd_2, c1, c2, (int)(255 - FPart(intery) * 255) * a / 255);
-      pixel.y += 1;
-      lerp_pixel(center, pixel, fd_2, c1, c2, (int)(FPart(intery) * 255) * a / 255);
+      pixel.y = ipart - w_min;
+
+      lerp_pixel(center, pixel, fd_2, c1, c2, (255 - intens) * na);
+      for (int i = -w_min + 1; i < w_max; i++)
+      {
+        pixel.y = ipart + i;
+        lerp_pixel(center, pixel, fd_2, c1, c2, a);
+      }
+      pixel.y = ipart + w_max;
+      lerp_pixel(center, pixel, fd_2, c1, c2, intens * na);
       intery += grad;
     }
-    mixpixel(x1, y1, c2.r, c2.g, c2.b, a);
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x1, y1 + i, c2.r, c2.g, c2.b, a);
+    }
   }
   else
   {
@@ -733,19 +768,34 @@ static void draw_gradient_line_vu(int x0, int y0, int x1, int y1, Color c1, Colo
     if (x1 < x0)
       grad = -grad;
     float interx = x0 + grad;
-    mixpixel(x0, y0, c1.r, c1.g, c1.b, a);
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x0 + i, y0, c1.r, c1.g, c1.b, a);
+    }
+    Point pixel;
+    float intens = 0;
+    int ipart = 0;
     for (int y = y0 + 1; y < y1; y++)
     {
-      int intens = (int)(FPart(interx) * 255);
-      Point pixel;
-      pixel.x = IPart(interx);
+      intens = FPart(interx) * 255;
+      ipart = IPart(interx);
+      pixel.x = ipart - w_min;
       pixel.y = y;
-      lerp_pixel(center, pixel, fd_2, c1, c2, (255 - intens) * a / 255);
-      pixel.x += 1;
-      lerp_pixel(center, pixel, fd_2, c1, c2, intens * a / 255);
+
+      lerp_pixel(center, pixel, fd_2, c1, c2, (255 - intens) * na);
+      for (int i = -w_min + 1; i < w_max; i++)
+      {
+        pixel.x = ipart + i;
+        lerp_pixel(center, pixel, fd_2, c1, c2, a);
+      }
+      pixel.x = ipart + w_max;
+      lerp_pixel(center, pixel, fd_2, c1, c2, intens * na);
       interx += grad;
     }
-    mixpixel(x1, y1, c2.r, c2.g, c2.b, a);
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x1 + i, y1, c2.r, c2.g, c2.b, a);
+    }
   }
 }
 
@@ -805,14 +855,14 @@ static void draw_gradient_arc_lines(int _x, int _y, int radius, float from, floa
   float fy = radius * sin(from + M_PI / 2);
   if (from == to)
   {
-    draw_gradient_line_vu(_x, _y, fx + _x, fy + _y, c1, c2, a);
+    draw_gradient_line_vu(_x, _y, fx + _x, fy + _y, c1, c2, a, 1);
     return;
   }
 
   float tx = radius * cos(to + M_PI / 2);
   float ty = radius * sin(to + M_PI / 2);
-  draw_gradient_line_vu(_x, _y, fx + _x, fy + _y, c1, c2, a);
-  draw_gradient_line_vu(_x, _y, tx + _x, ty + _y, c1, c2, a);
+  draw_gradient_line_vu(_x, _y, fx + _x, fy + _y, c1, c2, a, 1);
+  draw_gradient_line_vu(_x, _y, tx + _x, ty + _y, c1, c2, a, 1);
   // mixpixel(fx + _x, fy + _y, c1.r, c1.g, c1.b, a);
   // mixpixel(tx + _x, ty + _y, c2.r, c2.g, c2.b, a);
 }
@@ -1160,6 +1210,51 @@ static int draw_line_lua(lua_State *L)
   {
     draw_line(x0, y0, x1, y1, r, g, b, a);
   }
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
+static int draw_gradient_line_lua(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+
+  read_and_validate_buffer_info(L, 1);
+  int32_t x0 = luaL_checknumber(L, 2);
+  int32_t y0 = luaL_checknumber(L, 3);
+  int32_t x1 = luaL_checknumber(L, 4);
+  int32_t y1 = luaL_checknumber(L, 5);
+  uint32_t r1 = luaL_checknumber(L, 6);
+  uint32_t g1 = luaL_checknumber(L, 7);
+  uint32_t b1 = luaL_checknumber(L, 8);
+  uint32_t r2 = luaL_checknumber(L, 9);
+  uint32_t g2 = luaL_checknumber(L, 10);
+  uint32_t b2 = luaL_checknumber(L, 11);
+  uint32_t a = 0;
+  int w = 1;
+  if (lua_isnumber(L, 12) == 1)
+  {
+    a = luaL_checknumber(L, 12);
+  }
+  if (lua_isnumber(L, 13) == 1)
+  {
+    w = luaL_checknumber(L, 13);
+    if (w < 1)
+    {
+      w = 1;
+    }
+  }
+
+  Color c1;
+  c1.r = r1;
+  c1.g = g1;
+  c1.b = b1;
+  Color c2;
+  c2.r = r2;
+  c2.g = g2;
+  c2.b = b2;
+
+  draw_gradient_line_vu(x0, y0, x1, y1, c1, c2, a, w);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1582,6 +1677,7 @@ static int draw_bezier_lua(lua_State *L)
 static const luaL_reg Module_methods[] = {
     {"triangle", draw_triangle_lua},
     {"line", draw_line_lua},
+    {"gradient_line", draw_gradient_line_lua},
     {"arc", draw_arc_lua},
     {"filled_arc", draw_filled_arc_lua},
     {"gradient_arc", draw_gradient_arc_lua},
