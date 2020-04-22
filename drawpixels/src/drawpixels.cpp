@@ -294,14 +294,20 @@ static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, in
         Point new_pixel;
         new_pixel.x = pixel.x;
         new_pixel.y = pixel.y;
-        top.push(new_pixel);
+        if (in_buffer(new_pixel.x, new_pixel.y))
+        {
+          top.push(new_pixel);
+        }
       }
       else
       {
         Point new_pixel;
         new_pixel.x = pixel.x - 1;
         new_pixel.y = pixel.y;
-        top.push(new_pixel);
+        if (in_buffer(new_pixel.x, new_pixel.y))
+        {
+          top.push(new_pixel);
+        }
       }
       flag = 0;
     }
@@ -322,6 +328,10 @@ static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, in
 // Построчный алгоритм заполнения с затравкой
 static void fill_area(int x, int y, int r, int g, int b, int a)
 {
+  if (!in_buffer(x, y))
+  {
+    return;
+  }
   Point _pixel;
   _pixel.x = x;
   _pixel.y = y;
@@ -335,16 +345,16 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
     mixpixel(pixel.x, pixel.y, r, g, b, a);
     int temp_x = pixel.x;
     pixel.x += 1;
-    while (pixel.x < buffer_info.width && !is_contain(pixel.x, pixel.y))
+    while (pixel.x < buffer_info.width - 1 && !is_contain(pixel.x, pixel.y))
     {
       mixpixel(pixel.x, pixel.y, r, g, b, a);
       pixel.x += 1;
     }
     mixpixel(pixel.x, pixel.y, r, g, b, a);
-    int x_right = pixel.x;
+    int x_right = pixel.x >= buffer_info.width ? buffer_info.width - 1 : pixel.x;
     pixel.x = temp_x;
     pixel.x -= 1;
-    while (pixel.x > -1 && !is_contain(pixel.x, pixel.y))
+    while (pixel.x >= 1 && !is_contain(pixel.x, pixel.y))
     {
       mixpixel(pixel.x, pixel.y, r, g, b, a);
       pixel.x -= 1;
@@ -359,11 +369,10 @@ static void fill_area(int x, int y, int r, int g, int b, int a)
     }
     find_seed_pixel(top, pixel, x_right, r, g, b, a);
     pixel.y -= 2;
-    if (pixel.y <= 0)
+    if (pixel.y < 0)
     {
       continue;
     }
-
     pixel.x = x_left;
     find_seed_pixel(top, pixel, x_right, r, g, b, a);
   }
@@ -389,14 +398,20 @@ static void gradient_find_seed_pixel(std::stack<Point> &top, Point pixel, int x_
         Point new_pixel;
         new_pixel.x = pixel.x;
         new_pixel.y = pixel.y;
-        top.push(new_pixel);
+        if (in_buffer(new_pixel.x, new_pixel.y))
+        {
+          top.push(new_pixel);
+        }
       }
       else
       {
         Point new_pixel;
         new_pixel.x = pixel.x - 1;
         new_pixel.y = pixel.y;
-        top.push(new_pixel);
+        if (in_buffer(new_pixel.x, new_pixel.y))
+        {
+          top.push(new_pixel);
+        }
       }
       flag = 0;
     }
@@ -416,7 +431,10 @@ static void gradient_find_seed_pixel(std::stack<Point> &top, Point pixel, int x_
 
 static void gradient_fill_area(int x, int y, Point center, int fd_2, Color c1, Color c2, int a)
 {
-
+  if (!in_buffer(x, y))
+  {
+    return;
+  }
   Point _pixel;
   _pixel.x = x;
   _pixel.y = y;
@@ -430,16 +448,16 @@ static void gradient_fill_area(int x, int y, Point center, int fd_2, Color c1, C
     lerp_pixel(center, pixel, fd_2, c1, c2, a);
     int temp_x = pixel.x;
     pixel.x += 1;
-    while (pixel.x < buffer_info.width && !is_contain(pixel.x, pixel.y))
+    while (pixel.x < buffer_info.width - 1 && !is_contain(pixel.x, pixel.y))
     {
       lerp_pixel(center, pixel, fd_2, c1, c2, a);
       pixel.x += 1;
     }
     lerp_pixel(center, pixel, fd_2, c1, c2, a);
-    int x_right = pixel.x;
+    int x_right = pixel.x >= buffer_info.width ? buffer_info.width - 1 : pixel.x;
     pixel.x = temp_x;
     pixel.x -= 1;
-    while (pixel.x > -1 && !is_contain(pixel.x, pixel.y))
+    while (pixel.x >= 1 && !is_contain(pixel.x, pixel.y))
     {
       lerp_pixel(center, pixel, fd_2, c1, c2, a);
       pixel.x -= 1;
@@ -454,7 +472,7 @@ static void gradient_fill_area(int x, int y, Point center, int fd_2, Color c1, C
     }
     gradient_find_seed_pixel(top, pixel, x_right, center, fd_2, c1, c2, a);
     pixel.y -= 2;
-    if (pixel.y <= 0)
+    if (pixel.y < 0)
     {
       continue;
     }
@@ -1141,6 +1159,52 @@ static void draw_filled_circle(int32_t posx, int32_t posy, int32_t diameter, uin
   }
 }
 
+static int start_record_points_lua(lua_State *L)
+{
+  int top = lua_gettop(L);
+
+  start_record_points();
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
+static int stop_record_points_lua(lua_State *L)
+{
+  int top = lua_gettop(L);
+
+  stop_record_points();
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
+static int fill_area_lua(lua_State *L)
+{
+  int top = lua_gettop(L) + 4;
+  read_and_validate_buffer_info(L, 1);
+  int32_t x = luaL_checknumber(L, 2);
+  int32_t y = luaL_checknumber(L, 3);
+  int32_t r = luaL_checknumber(L, 4);
+  int32_t g = luaL_checknumber(L, 5);
+  int32_t b = luaL_checknumber(L, 6);
+  int32_t a = 0;
+  if (lua_isnumber(L, 7) == 1)
+  {
+    a = luaL_checknumber(L, 7);
+  }
+  if (a == 0 && buffer_info.channels == 4)
+  {
+    assert(top == lua_gettop(L));
+    return 0;
+  }
+
+  fill_area(x, y, r, g, b, a);
+
+  assert(top == lua_gettop(L));
+  return 0;
+}
+
 static int draw_triangle_lua(lua_State *L)
 {
   int top = lua_gettop(L) + 4;
@@ -1602,7 +1666,7 @@ static int draw_pixel_lua(lua_State *L)
     a = luaL_checknumber(L, 7);
   }
 
-  putpixel(x, y, r, g, b, a);
+  mixpixel(x, y, r, g, b, a);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1676,6 +1740,9 @@ static int draw_bezier_lua(lua_State *L)
 
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
+    {"start_fill", start_record_points_lua},
+    {"end_fill", stop_record_points_lua},
+    {"fill_area", fill_area_lua},
     {"triangle", draw_triangle_lua},
     {"line", draw_line_lua},
     {"gradient_line", draw_gradient_line_lua},
