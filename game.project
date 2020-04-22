@@ -3,7 +3,7 @@ title = Draw Pixels
 version = 0.5
 
 [bootstrap]
-main_collection = /examples/togui/togui.collectionc
+main_collection = /example/example.collectionc
 
 [input]
 game_binding = /input/game.input_bindingc
