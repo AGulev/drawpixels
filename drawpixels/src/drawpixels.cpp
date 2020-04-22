@@ -117,7 +117,7 @@ static void putpixel(int x, int y, int r, int g, int b, int a)
   }
 }
 
-static void recordmixpixel(int i, float r, float g, float b, float a)
+static void record_mix_pixel(int i, float r, float g, float b, float a)
 {
   float ba = buffer_info.bytes[i + 3] / 255.0;
   a = a / 255.0;
@@ -144,6 +144,17 @@ static void add_point(int x, int y)
   points[y * buffer_info.width + x] = 1;
 }
 
+static void record_pixel(int i, int r, int g, int b, int a)
+{
+  buffer_info.bytes[i] = r;
+  buffer_info.bytes[i + 1] = g;
+  buffer_info.bytes[i + 2] = b;
+  if (buffer_info.channels == 4)
+  {
+    buffer_info.bytes[i + 3] = a;
+  }
+}
+
 static void mixpixel(int x, int y, float r, float g, float b, float a)
 {
   if (!in_buffer(x, y))
@@ -158,7 +169,7 @@ static void mixpixel(int x, int y, float r, float g, float b, float a)
   int i = xytoi(x, y);
   if (buffer_info.channels == 3 || buffer_info.bytes[i + 3] == 0 || a == 255)
   {
-    putpixel(x, y, r, g, b, a);
+    record_pixel(i, r, g, b, a);
     return;
   }
   if (a == 0)
@@ -166,7 +177,7 @@ static void mixpixel(int x, int y, float r, float g, float b, float a)
     return;
   }
 
-  recordmixpixel(i, r, g, b, a);
+  record_mix_pixel(i, r, g, b, a);
 }
 
 static void fill_mixed_line(int fromx, int tox, int y, int r, int g, int b, int a)
@@ -183,7 +194,7 @@ static void fill_mixed_line(int fromx, int tox, int y, int r, int g, int b, int 
   int end = xytoi(tox, y);
   for (int i = start; i < end; i += 4)
   {
-    recordmixpixel(i, r, g, b, a);
+    record_mix_pixel(i, r, g, b, a);
   }
 }
 
@@ -577,9 +588,8 @@ static float FPart(float x)
 }
 
 // http://grafika.me/node/38
-static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, int a)
+static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, int a, float w)
 {
-  int w = 4;
   int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
   int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
   if (dx == 0 || dy == 0)
@@ -587,6 +597,10 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
     draw_line(x0, y0, x1, y1, r, g, b, a);
     return;
   }
+  float na = (float)a / 255;
+
+  int w_min = ceil(w / 2) - 1;
+  int w_max = w / 2 + 1;
 
   if (dy < dx)
   {
@@ -603,15 +617,29 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
     if (y1 < y0)
       grad = -grad;
     float intery = y0 + grad;
-    mixpixel(x0, y0, r, g, b, a);
-
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x0, y0 + i, r, g, b, a);
+    }
+    float intens = 0;
+    int ipart = 0;
     for (int x = x0 + 1; x < x1; x++)
     {
-      mixpixel(x, IPart(intery), r, g, b, (int)(255 - FPart(intery) * 255) * a / 255);
-      mixpixel(x, IPart(intery) + 1, r, g, b, (int)(FPart(intery) * 255) * a / 255);
+      intens = FPart(intery) * 255;
+      ipart = IPart(intery);
+      mixpixel(x, ipart - w_min, r, g, b, (255 - intens) * na);
+      for (int i = -w_min + 1; i < w_max; i++)
+      {
+        mixpixel(x, ipart + i, r, g, b, a);
+      }
+      mixpixel(x, ipart + w_max, r, g, b, intens * na);
+
       intery += grad;
     }
-    mixpixel(x1, y1, r, g, b, a);
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x1, y1 + i, r, g, b, a);
+    }
   }
   else
   {
@@ -628,16 +656,28 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
     if (x1 < x0)
       grad = -grad;
     float interx = x0 + grad;
-    mixpixel(x0, y0, r, g, b, a);
-
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x0 + i, y0, r, g, b, a);
+    }
+    float intens = 0;
+    int ipart = 0;
     for (int y = y0 + 1; y < y1; y++)
     {
-      int intens = (int)(FPart(interx) * 255);
-      mixpixel(IPart(interx), y, r, g, b, (255 - intens) * a / 255);
-      mixpixel(IPart(interx) + 1, y, r, g, b, intens * a / 255);
+      intens = FPart(interx) * 255;
+      ipart = IPart(interx);
+      mixpixel(ipart - w_min, y, r, g, b, (255 - intens) * na);
+      for (int i = -w_min + 1; i < w_max; i++)
+      {
+        mixpixel(ipart + i, y, r, g, b, a);
+      }
+      mixpixel(ipart + w_max, y, r, g, b, intens * na);
       interx += grad;
     }
-    mixpixel(x1, y1, r, g, b, a);
+    for (int i = -w_min; i < w_max; i++)
+    {
+      mixpixel(x1 + i, y1, r, g, b, a);
+    }
   }
 }
 
@@ -773,8 +813,8 @@ static void draw_gradient_arc_lines(int _x, int _y, int radius, float from, floa
   float ty = radius * sin(to + M_PI / 2);
   draw_gradient_line_vu(_x, _y, fx + _x, fy + _y, c1, c2, a);
   draw_gradient_line_vu(_x, _y, tx + _x, ty + _y, c1, c2, a);
-  mixpixel(fx + _x, fy + _y, c1.r, c1.g, c1.b, a);
-  mixpixel(tx + _x, ty + _y, c2.r, c2.g, c2.b, a);
+  // mixpixel(fx + _x, fy + _y, c1.r, c1.g, c1.b, a);
+  // mixpixel(tx + _x, ty + _y, c2.r, c2.g, c2.b, a);
 }
 
 static void draw_arc_lines(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
@@ -783,16 +823,16 @@ static void draw_arc_lines(int _x, int _y, int radius, float from, float to, int
   float fy = radius * sin(from + M_PI / 2);
   if (from == to)
   {
-    draw_line_vu(_x, _y, fx + _x, fy + _y, r, g, b, a);
+    draw_line_vu(_x, _y, fx + _x, fy + _y, r, g, b, a, 1);
     return;
   }
 
   float tx = radius * cos(to + M_PI / 2);
   float ty = radius * sin(to + M_PI / 2);
-  draw_line_vu(_x, _y, fx + _x, fy + _y, r, g, b, a);
-  draw_line_vu(_x, _y, tx + _x, ty + _y, r, g, b, a);
-  mixpixel(fx + _x, fy + _y, r, g, b, a);
-  mixpixel(tx + _x, ty + _y, r, g, b, a);
+  draw_line_vu(_x, _y, fx + _x, fy + _y, r, g, b, a, 1);
+  draw_line_vu(_x, _y, tx + _x, ty + _y, r, g, b, a, 1);
+  // mixpixel(fx + _x, fy + _y, r, g, b, a);
+  // mixpixel(tx + _x, ty + _y, r, g, b, a);
 }
 
 static void draw_arc_vu(int _x, int _y, int radius, float from, float to, int r, int g, int b, int a)
@@ -1072,9 +1112,9 @@ static int draw_triangle_lua(lua_State *L)
   }
 
   draw_triangle(x0, y0, x1, y1, x2, y2, r, g, b, a);
-  draw_line_vu(x0, y0, x1, y1, r, g, b, a);
-  draw_line_vu(x1, y1, x2, y2, r, g, b, a);
-  draw_line_vu(x2 - 1, y2, x0 - 1, y0, r, g, b, a);
+  draw_line_vu(x0, y0, x1, y1, r, g, b, a, 1);
+  draw_line_vu(x1, y1, x2, y2, r, g, b, a, 1);
+  draw_line_vu(x2 - 1, y2, x0 - 1, y0, r, g, b, a, 1);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1093,6 +1133,7 @@ static int draw_line_lua(lua_State *L)
   uint32_t g = luaL_checknumber(L, 7);
   uint32_t b = luaL_checknumber(L, 8);
   uint32_t a = 0;
+  int w = 1;
   if (lua_isnumber(L, 9) == 1)
   {
     a = luaL_checknumber(L, 9);
@@ -1101,11 +1142,19 @@ static int draw_line_lua(lua_State *L)
   if (lua_isboolean(L, 10) == 1)
   {
     antialiasing = lua_toboolean(L, 10);
+    if (lua_isnumber(L, 11) == 1)
+    {
+      w = luaL_checknumber(L, 11);
+      if (w < 1)
+      {
+        w = 1;
+      }
+    }
   }
 
   if (antialiasing && buffer_info.channels == 4)
   {
-    draw_line_vu(x0, y0, x1, y1, r, g, b, a);
+    draw_line_vu(x0, y0, x1, y1, r, g, b, a, w);
   }
   else
   {
@@ -1115,7 +1164,6 @@ static int draw_line_lua(lua_State *L)
   assert(top == lua_gettop(L));
   return 0;
 }
-
 
 static int draw_arc_lua(lua_State *L)
 {
@@ -1170,7 +1218,7 @@ static int draw_filled_arc_lua(lua_State *L)
 
   fill_area(posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a);
   stop_record_points();
-  draw_line_vu(posx, posy, posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a);
+  draw_line_vu(posx, posy, posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a, 1);
 
   assert(top == lua_gettop(L));
   return 0;
