@@ -1313,7 +1313,7 @@ static int draw_filled_arc_lua(lua_State *L)
 
   fill_area(posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a);
   stop_record_points();
-  draw_line_vu(posx, posy, posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a, 1);
+  draw_line_vu(posx, posy, posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a, 2);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1362,6 +1362,7 @@ static int draw_gradient_arc_lua(lua_State *L)
 
   gradient_fill_area(posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), center_point, (diameter / 2) * (diameter / 2), c1, c2, a);
   stop_record_points();
+  draw_gradient_line_vu(posx, posy, posx + diameter / 2.05 * cos(center), posy + diameter / 2.05 * sin(center), c1, c2, a, 1);
 
   assert(top == lua_gettop(L));
   return 0;
