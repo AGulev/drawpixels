@@ -997,14 +997,12 @@ static void draw_arc_vu(int _x, int _y, int radius, float from, float to, int r,
   }
 }
 
-static void draw_normalized_arc(int32_t posx, int32_t posy, int32_t diameter, float &from, float &to, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
+static void draw_normalized_arc(int32_t posx, int32_t posy, int32_t radius, float &from, float &to, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
 {
-  float radius = diameter / 2;
   if (abs(from - to) >= PI_2)
   {
     float fx = radius * cos(from);
     float fy = radius * sin(from);
-    // draw_line_vu(posx, posy, fx + posx, fy + posy, r, g, b, a);
     draw_circle_vu(posx, posy, radius, r, g, b, a);
   }
   else
@@ -1331,7 +1329,7 @@ static int draw_arc_lua(lua_State *L)
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
   int32_t posy = luaL_checknumber(L, 3);
-  int32_t diameter = luaL_checknumber(L, 4);
+  int32_t radius = luaL_checknumber(L, 4);
   float from = luaL_checknumber(L, 5);
   float to = luaL_checknumber(L, 6);
   uint32_t r = luaL_checknumber(L, 7);
@@ -1343,8 +1341,8 @@ static int draw_arc_lua(lua_State *L)
     a = luaL_checknumber(L, 10);
   }
 
-  draw_normalized_arc(posx, posy, diameter, from, to, r, g, b, a);
-  draw_arc_lines(posx, posy, diameter / 2, from, to, r, g, b, a);
+  draw_normalized_arc(posx, posy, radius, from, to, r, g, b, a);
+  draw_arc_lines(posx, posy, radius, from, to, r, g, b, a);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1357,7 +1355,7 @@ static int draw_filled_arc_lua(lua_State *L)
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
   int32_t posy = luaL_checknumber(L, 3);
-  int32_t diameter = luaL_checknumber(L, 4);
+  int32_t radius = luaL_checknumber(L, 4);
   float from = luaL_checknumber(L, 5);
   float to = luaL_checknumber(L, 6);
   uint32_t r = luaL_checknumber(L, 7);
@@ -1369,15 +1367,15 @@ static int draw_filled_arc_lua(lua_State *L)
     a = luaL_checknumber(L, 10);
   }
   start_record_points();
-  draw_normalized_arc(posx, posy, diameter, from, to, r, g, b, a);
-  draw_arc_lines(posx, posy, diameter / 2, from, to, r, g, b, a);
+  draw_normalized_arc(posx, posy, radius, from, to, r, g, b, a);
+  draw_arc_lines(posx, posy, radius, from, to, r, g, b, a);
 
   float center = (from + to) / 2;
   center = from > to ? center - M_PI / 2 : center + M_PI / 2;
 
-  fill_area(posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a);
+  fill_area(posx + radius * 2 / 3 * cos(center), posy + radius * 2 / 3 * sin(center), r, g, b, a);
   stop_record_points();
-  draw_line_vu(posx, posy, posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), r, g, b, a, 2);
+  draw_line_vu(posx, posy, posx + radius * 2 / 3 * cos(center), posy + radius * 2 / 3 * sin(center), r, g, b, a, 2);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1390,7 +1388,7 @@ static int draw_gradient_arc_lua(lua_State *L)
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
   int32_t posy = luaL_checknumber(L, 3);
-  int32_t diameter = luaL_checknumber(L, 4);
+  int32_t radius = luaL_checknumber(L, 4);
   float from = luaL_checknumber(L, 5);
   float to = luaL_checknumber(L, 6);
   uint32_t r1 = luaL_checknumber(L, 7);
@@ -1414,8 +1412,8 @@ static int draw_gradient_arc_lua(lua_State *L)
   c2.g = g2;
   c2.b = b2;
   start_record_points();
-  draw_normalized_arc(posx, posy, diameter, from, to, r2, g2, b2, a);
-  draw_gradient_arc_lines(posx, posy, diameter / 2, from, to, c1, c2, a);
+  draw_normalized_arc(posx, posy, radius, from, to, r2, g2, b2, a);
+  draw_gradient_arc_lines(posx, posy, radius, from, to, c1, c2, a);
 
   float center = (from + to) / 2;
   center = from > to ? center - M_PI / 2 : center + M_PI / 2;
@@ -1424,9 +1422,9 @@ static int draw_gradient_arc_lua(lua_State *L)
   center_point.x = posx;
   center_point.y = posy;
 
-  gradient_fill_area(posx + diameter / 3 * cos(center), posy + diameter / 3 * sin(center), center_point, (diameter / 2) * (diameter / 2), c1, c2, a);
+  gradient_fill_area(posx + radius * 2 / 3 * cos(center), posy + radius * 2 / 3 * sin(center), center_point, radius * radius, c1, c2, a);
   stop_record_points();
-  draw_gradient_line_vu(posx, posy, posx + diameter / 2.05 * cos(center), posy + diameter / 2.05 * sin(center), c1, c2, a, 1);
+  draw_gradient_line_vu(posx, posy, posx + radius * 2 / 2.05 * cos(center), posy + radius * 2 / 2.05 * sin(center), c1, c2, a, 1);
 
   assert(top == lua_gettop(L));
   return 0;
@@ -1743,7 +1741,7 @@ static const luaL_reg Module_methods[] = {
     {"start_fill", start_record_points_lua},
     {"end_fill", stop_record_points_lua},
     {"fill_area", fill_area_lua},
-    {"triangle", draw_triangle_lua},
+    // {"triangle", draw_triangle_lua},
     {"line", draw_line_lua},
     {"gradient_line", draw_gradient_line_lua},
     {"arc", draw_arc_lua},
