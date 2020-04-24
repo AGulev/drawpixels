@@ -325,7 +325,7 @@ static void find_seed_pixel(std::stack<Point> &top, Point pixel, int x_right, in
   }
 }
 
-// Построчный алгоритм заполнения с затравкой
+// Seed-by-line filling algorithm
 static void fill_area(int x, int y, int r, int g, int b, int a)
 {
   if (!in_buffer(x, y))
@@ -622,7 +622,7 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
   int w_max = w / 2 + 1;
   if (dx == 0)
   {
-    for (size_t i = w_min; i < w_max; i++)
+    for (int i = -w_min; i < w_max; i++)
     {
       draw_line(x0 + i, y0, x1 + i, y1, r, g, b, a);
     }
@@ -630,7 +630,7 @@ static void draw_line_vu(int x0, int y0, int x1, int y1, int r, int g, int b, in
   }
   if (dy == 0)
   {
-    for (size_t i = w_min; i < w_max; i++)
+    for (int i = -w_min; i < w_max; i++)
     {
       draw_line(x0, y0 + i, x1, y1 + i, r, g, b, a);
     }
