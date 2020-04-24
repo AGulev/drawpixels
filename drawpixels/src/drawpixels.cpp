@@ -600,6 +600,40 @@ static void draw_line(int x0, int y0, int x1, int y1, int r, int g, int b, int a
   }
 }
 
+static void draw_gradient_line(int x0, int y0, int x1, int y1, Color c1, Color c2, int a)
+{
+  // https://gist.github.com/bert/1085538#file-plot_line-c
+  int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+  int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+  int err = dx + dy, e2; /* error value e_xy */
+  int fd_2 = (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
+
+  Point center;
+  center.x = x0;
+  center.y = y0;
+  Point pixel;
+
+  for (;;)
+  { /* loop */
+    pixel.x = x0;
+    pixel.y = y0;
+    lerp_pixel(center, pixel, fd_2, c1, c2, a);
+    if (x0 == x1 && y0 == y1)
+      break;
+    e2 = 2 * err;
+    if (e2 >= dy)
+    {
+      err += dy;
+      x0 += sx;
+    } /* e_xy+e_x > 0 */
+    if (e2 <= dx)
+    {
+      err += dx;
+      y0 += sy;
+    } /* e_xy+e_y < 0 */
+  }
+}
+
 static int IPart(float x)
 {
   return (int)x;
@@ -721,11 +755,27 @@ static void draw_gradient_line_vu(int x0, int y0, int x1, int y1, Color c1, Colo
   Point center;
   center.x = x0;
   center.y = y0;
+  int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
+  int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
   int fd_2 = (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
   int w_min = ceilf(w / 2) - 1;
   int w_max = w / 2 + 1;
-  int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
-  int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
+  if (dx == 0)
+  {
+    for (int i = -w_min; i < w_max; i++)
+    {
+      draw_gradient_line(x0 + i, y0, x1 + i, y1, c1, c2, a);
+    }
+    return;
+  }
+  if (dy == 0)
+  {
+    for (int i = -w_min; i < w_max; i++)
+    {
+      draw_gradient_line(x0, y0 + i, x1, y1 + i, c1, c2, a);
+    }
+    return;
+  }
   float na = (float)a / 255;
   if (dy < dx)
   {
@@ -1293,12 +1343,17 @@ static int draw_gradient_line_lua(lua_State *L)
   {
     a = luaL_checknumber(L, 12);
   }
-  if (lua_isnumber(L, 13) == 1)
+  bool antialiasing = false;
+  if (lua_isboolean(L, 13) == 1)
   {
-    w = luaL_checknumber(L, 13);
-    if (w < 1)
+    antialiasing = lua_toboolean(L, 13);
+    if (lua_isnumber(L, 14) == 1)
     {
-      w = 1;
+      w = luaL_checknumber(L, 14);
+      if (w < 1)
+      {
+        w = 1;
+      }
     }
   }
 
@@ -1311,7 +1366,14 @@ static int draw_gradient_line_lua(lua_State *L)
   c2.g = g2;
   c2.b = b2;
 
-  draw_gradient_line_vu(x0, y0, x1, y1, c1, c2, a, w);
+  if (antialiasing && buffer_info.channels == 4)
+  {
+    draw_gradient_line_vu(x0, y0, x1, y1, c1, c2, a, w);
+  }
+  else
+  {
+    draw_gradient_line(x0, y0, x1, y1, c1, c2, a);
+  }
 
   assert(top == lua_gettop(L));
   return 0;

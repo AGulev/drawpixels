@@ -21,7 +21,7 @@ function drawpixels.fill(buffer_info, red, green, blue, alpha) end
 ---Draw a line between two points:
 function drawpixels.line(buffer_info, x0, y0, x1, y1, red, green, blue, alpha, antialiasing, width) end
 ---Draw a gradient line between two points:
-function drawpixels.gradient_line(buffer_info, x0, y0, x1, y1, red1, green1, blue1, red2, green2, blue2, alpha, width) end
+function drawpixels.gradient_line(buffer_info, x0, y0, x1, y1, red1, green1, blue1, red2, green2, blue2, alpha, antialiasing, width) end
 ---Draw a arc between two corners:
 function drawpixels.arc(buffer_info, x, y, radius, from, to, red, green, blue, alpha) end
 ---Draw a filled arc between two corners:

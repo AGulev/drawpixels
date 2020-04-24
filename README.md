@@ -117,8 +117,8 @@ Draw a line between two points:
 `antialiasing` - adds anti-aliasing. Only for 4 channels. Optional parameter.<br />
 `width` - indicates the line width. Only for line with anti-aliasing. Optional parameter.<br />
 
-#### drawpixels.gradient_line(buffer_info, x0, y0, x1, y1, red1, green1, blue1, red2, green2, blue2, alpha, width)
-Draw a gradient line with anti-aliasing between two points. Only for 4 channels:
+#### drawpixels.gradient_line(buffer_info, x0, y0, x1, y1, red1, green1, blue1, red2, green2, blue2, alpha, antialiasing, width)
+Draw a gradient line between two points:
 
 `buffer_info` - buffer information<br />
 `x0` - x position of one end of the line<br />
@@ -132,6 +132,7 @@ Draw a gradient line with anti-aliasing between two points. Only for 4 channels:
 `green2` - second green channel of the color 0..255<br />
 `blue2` - second blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255<br />
+`antialiasing` - adds anti-aliasing. Only for 4 channels. Optional parameter.<br />
 `width` - indicates the line width. Only for line with anti-aliasing. Optional parameter.<br />
 
 #### drawpixels.arc(buffer_info, x, y, radius, from, to, red, green, blue, alpha)
