@@ -867,36 +867,78 @@ static void draw_gradient_line_vu(int x0, int y0, int x1, int y1, Color c1, Colo
   }
 }
 
-// http://www.opita.net/node/699
-static void draw_circle_vu(int _x, int _y, int radius, int r, int g, int b, int a)
+// modified http://www.opita.net/node/699
+static void draw_circle_vu(int _x, int _y, int radius, int r, int g, int b, int a, float w)
 {
-  mixpixel(_x - radius + 1, _y, r, g, b, a);
-  mixpixel(_x, _y - radius + 1, r, g, b, a);
+  // mixpixel(_x - radius + 1, _y, r, g, b, a);
+  // mixpixel(_x, _y - radius + 1, r, g, b, a);
+  int w_min = ceilf(w / 2) - 1;
+  int w_max = w / 2 + 1;
   float iy = 0;
-  for (int x = 0; x <= radius * cos(M_PI / 4); x++)
+  int intens = 0;
+  int inv_intens = 0;
+  int iiy = 0;
+  int cx = 0;
+  int cy = 0;
+  for (int x = 0; x <= (radius + w) * cos(M_PI / 4); x++)
   {
     iy = (float)sqrt(radius * radius - x * x);
-    int intens = (int)((FPart(iy) * 255.0) * a / 255);
-    int inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
-    int iiy = IPart(iy);
-    mixpixel(_x - x - 1, _y + iiy, r, g, b, inv_intens);
-    mixpixel(_x - x - 1, _y + iiy + 1, r, g, b, intens);
-    mixpixel(_x + x, _y + iiy, r, g, b, inv_intens);
-    mixpixel(_x + x, _y + iiy + 1, r, g, b, intens);
-    mixpixel(_x + iiy, _y + x, r, g, b, inv_intens);
-    mixpixel(_x + iiy + 1, _y + x, r, g, b, intens);
-    mixpixel(_x + iiy, _y - x - 1, r, g, b, inv_intens);
-    mixpixel(_x + iiy + 1, _y - x - 1, r, g, b, intens);
-    x++;
-    mixpixel(_x + x, _y - iiy, r, g, b, intens);
-    mixpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
-    mixpixel(_x - x, _y - iiy, r, g, b, intens);
-    mixpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
-    mixpixel(_x - iiy, _y - x, r, g, b, intens);
-    mixpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
-    mixpixel(_x - iiy, _y + x, r, g, b, intens);
-    mixpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
-    x--;
+    intens = (int)((FPart(iy) * 255.0) * a / 255);
+    inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
+    iiy = IPart(iy);
+    cx = _x - x;
+    cy = _y + iiy;
+    mixpixel(cx, cy - w_min, r, g, b, inv_intens);
+    mixpixel(cx, cy + w_max, r, g, b, intens);
+    cy = _y - iiy - 1;
+    mixpixel(cx, cy - w_min, r, g, b, intens);
+    mixpixel(cx, cy + w_max, r, g, b, inv_intens);
+    cx = _x + x;
+    cy = _y + iiy;
+    mixpixel(cx, cy - w_min, r, g, b, inv_intens);
+    mixpixel(cx, cy + w_max, r, g, b, intens);
+    cy = _y - iiy - 1;
+    mixpixel(cx, cy - w_min, r, g, b, intens);
+    mixpixel(cx, cy + w_max, r, g, b, inv_intens);
+
+    cx = _x + iiy;
+    cy = _y + x;
+    mixpixel(cx - w_min, cy, r, g, b, inv_intens);
+    mixpixel(cx + w_max, cy, r, g, b, intens);
+    cy = _y - x;
+    mixpixel(cx - w_min, cy, r, g, b, inv_intens);
+    mixpixel(cx + w_max, cy, r, g, b, intens);
+    cx = _x - iiy - 1;
+    cy = _y + x;
+    mixpixel(cx - w_min, cy, r, g, b, intens);
+    mixpixel(cx + w_max, cy, r, g, b, inv_intens);
+    cy = _y - x;
+    mixpixel(cx - w_min, cy, r, g, b, intens);
+    mixpixel(cx + w_max, cy, r, g, b, inv_intens);
+    for (int i = -w_min + 1; i < w_max; i++)
+    {
+      cx = _x - x;
+      cy = _y + iiy;
+      mixpixel(cx, cy + i, r, g, b, a);
+      cy = _y - iiy - 1;
+      mixpixel(cx, cy + i, r, g, b, a);
+      cx = _x + x;
+      cy = _y + iiy;
+      mixpixel(cx, cy + i, r, g, b, a);
+      cy = _y - iiy - 1;
+      mixpixel(cx, cy + i, r, g, b, a);
+
+      cx = _x + iiy;
+      cy = _y + x;
+      mixpixel(cx + i, cy, r, g, b, a);
+      cy = _y - x;
+      mixpixel(cx + i, cy, r, g, b, a);
+      cx = _x - iiy - 1;
+      cy = _y + x;
+      mixpixel(cx + i, cy, r, g, b, a);
+      cy = _y - x;
+      mixpixel(cx + i, cy, r, g, b, a);
+    }
   }
 }
 
@@ -1049,7 +1091,7 @@ static void draw_normalized_arc(int32_t posx, int32_t posy, int32_t radius, floa
   {
     float fx = radius * cos(from);
     float fy = radius * sin(from);
-    draw_circle_vu(posx, posy, radius, r, g, b, a);
+    draw_circle_vu(posx, posy, radius, r, g, b, a, 1);
   }
   else
   {
@@ -1499,6 +1541,7 @@ static int draw_circle_lua(lua_State *L)
   uint32_t g = luaL_checknumber(L, 6);
   uint32_t b = luaL_checknumber(L, 7);
   uint32_t a = 0;
+  int w = 1;
   if (lua_isnumber(L, 8) == 1)
   {
     a = luaL_checknumber(L, 8);
@@ -1507,11 +1550,19 @@ static int draw_circle_lua(lua_State *L)
   if (lua_isboolean(L, 9) == 1)
   {
     antialiasing = lua_toboolean(L, 9);
+    if (lua_isnumber(L, 10) == 1)
+    {
+      w = luaL_checknumber(L, 10);
+      if (w < 1)
+      {
+        w = 1;
+      }
+    }
   }
 
   if (antialiasing && buffer_info.channels == 4)
   {
-    draw_circle_vu(posx, posy, diameter / 2, r, g, b, a);
+    draw_circle_vu(posx, posy, diameter / 2, r, g, b, a, w);
   }
   else
   {

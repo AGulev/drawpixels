@@ -40,7 +40,7 @@ local buffer_info = {
 ```
 Then when you have a buffer info, you can use next methods:
 
-#### drawpixels.circle(buffer_info, pox_x, pox_y, diameter, red, green, blue, alpha, antialiasing)
+#### drawpixels.circle(buffer_info, pox_x, pox_y, diameter, red, green, blue, alpha, antialiasing, width)
 Method for drawing circle:
 
 `buffer_info` - buffer information<br />
@@ -52,6 +52,7 @@ Method for drawing circle:
 `blue` - blue channel of the color 0..255<br />
 `alpha` - alpha channel 0..255. Optional parameter for rgba textures<br />
 `antialiasing` - adds anti-aliasing. Only for 4 channels. Optional parameter.<br />
+`width` - indicates the circle width. Only for circle with anti-aliasing. Optional parameter.<br />
 
 #### drawpixels.filled_circle(buffer_info, pos_x, pos_y, diameter, red, green, blue, alpha, antialiasing)
 Method for drawing filled circle:

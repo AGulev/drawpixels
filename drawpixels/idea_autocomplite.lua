@@ -9,7 +9,7 @@ function drawpixels.stop_fill() end
 ---Fills the area considering the boundaries:
 function drawpixels.fill_area(buffer_info, x,y, red, green, blue, alpha) end
 ---Method for drawing circle:
-function drawpixels.circle(buffer_info, pox_x, pox_y, diameter, red, green, blue, alpha, antialiasing) end
+function drawpixels.circle(buffer_info, pox_x, pox_y, diameter, red, green, blue, alpha, antialiasing, width) end
 ---Method for drawing filled circle:
 function drawpixels.filled_circle(buffer_info, pos_x, pos_y, diameter, red, green, blue, alpha, antialiasing) end
 ---Method for drawing rectangle:
