@@ -131,6 +131,20 @@ static void record_mix_pixel(int i, float r, float g, float b, float a)
   recordtobuffer(i + 3, oa);
 }
 
+// static void record_empty_mix_pixel(int i, float r, float g, float b, float a)
+// {
+//   float ba = 0;
+//   a = a / 255.0;
+//   float oa = a + ba * (1 - a);
+//   r = getmixrgb(1, ba, r / 255.0, a, oa);
+//   g = getmixrgb(1, ba, g / 255.0, a, oa);
+//   b = getmixrgb(1, ba, b / 255.0, a, oa);
+//   recordtobuffer(i, r);
+//   recordtobuffer(i + 1, g);
+//   recordtobuffer(i + 2, b);
+//   recordtobuffer(i + 3, oa);
+// }
+
 static void add_point(int x, int y)
 {
   if (x < 0)
@@ -176,6 +190,10 @@ static void mixpixel(int x, int y, float r, float g, float b, float a)
   {
     return;
   }
+  // if (buffer_info.bytes[i + 3] == 0)
+  // {
+  //   record_empty_mix_pixel(i, r, g, b, a);
+  // }
 
   record_mix_pixel(i, r, g, b, a);
 }
@@ -870,8 +888,10 @@ static void draw_gradient_line_vu(int x0, int y0, int x1, int y1, Color c1, Colo
 // modified http://www.opita.net/node/699
 static void draw_circle_vu(int _x, int _y, int radius, int r, int g, int b, int a, float w)
 {
-  // mixpixel(_x - radius + 1, _y, r, g, b, a);
-  // mixpixel(_x, _y - radius + 1, r, g, b, a);
+  if (radius < 1)
+  {
+    return;
+  }
   int w_min = ceilf(w / 2) - 1;
   int w_max = w / 2 + 1;
   float iy = 0;
@@ -1111,65 +1131,6 @@ static void draw_normalized_arc(int32_t posx, int32_t posy, int32_t radius, floa
   }
 }
 
-static void draw_filled_circle_vu(int _x, int _y, int radius, int r, int g, int b, int a)
-{
-  mixpixel(_x - radius + 1, _y, r, g, b, a);
-  mixpixel(_x, _y - radius + 1, r, g, b, a);
-
-  float iy = 0;
-  int last_iiy1 = 0;
-  int last_iiy2 = 0;
-  int last_iiy3 = 0;
-  int last_iiy4 = 0;
-  int first_x = radius * cos(M_PI / 4);
-  int first_y = sqrt(radius * radius - first_x * first_x);
-  for (int x = first_x; x >= 0; x--)
-  {
-    iy = (float)sqrt(radius * radius - x * x);
-    int intens = (int)((FPart(iy) * 255.0) * a / 255.0);
-    int inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
-    int iiy = IPart(iy);
-    mixpixel(_x - x - 1, _y + iiy, r, g, b, inv_intens);
-    mixpixel(_x - x - 1, _y + iiy + 1, r, g, b, intens);
-    mixpixel(_x + x, _y + iiy, r, g, b, inv_intens);
-    mixpixel(_x + x, _y + iiy + 1, r, g, b, intens);
-    if (_y + iiy != last_iiy1)
-    {
-      fill_mixed_line(_x - x, _x + x, _y + iiy, r, g, b, a);
-    }
-    mixpixel(_x + iiy, _y + x, r, g, b, inv_intens);
-    mixpixel(_x + iiy + 1, _y + x, r, g, b, intens);
-    mixpixel(_x + iiy, _y - x - 1, r, g, b, inv_intens);
-    mixpixel(_x + iiy + 1, _y - x - 1, r, g, b, intens);
-    x++;
-    mixpixel(_x + x, _y - iiy, r, g, b, intens);
-    mixpixel(_x + x, _y - iiy + 1, r, g, b, inv_intens);
-    mixpixel(_x - x, _y - iiy, r, g, b, intens);
-    mixpixel(_x - x, _y - iiy + 1, r, g, b, inv_intens);
-    if (_y - iiy + 1 != last_iiy2)
-    {
-      fill_mixed_line(_x + x + 1, _x - x + 1, _y - iiy + 1, r, g, b, a);
-    }
-    mixpixel(_x - iiy, _y - x, r, g, b, intens);
-    mixpixel(_x - iiy + 1, _y - x, r, g, b, inv_intens);
-    if (_y - x > _y - first_y + 1 && _y - x != last_iiy3)
-    {
-      fill_mixed_line(_x - iiy + 1, _x + iiy + 1, _y - x, r, g, b, a);
-    }
-    mixpixel(_x - iiy, _y + x, r, g, b, intens);
-    mixpixel(_x - iiy + 1, _y + x, r, g, b, inv_intens);
-    if (_y + iiy > _y + first_y && _y + x != last_iiy4)
-    {
-      fill_mixed_line(_x - iiy + 1, _x + iiy + 1, _y + x - 1, r, g, b, a);
-    }
-    x--;
-    last_iiy1 = _y + iiy;
-    last_iiy2 = _y - iiy + 1;
-    last_iiy3 = _y - x + 1;
-    last_iiy4 = _y + x - 1;
-  }
-}
-
 //https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 static void draw_circle(int32_t posx, int32_t posy, int32_t diameter, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
 {
@@ -1240,6 +1201,79 @@ static void draw_filled_circle(int32_t posx, int32_t posy, int32_t diameter, uin
         dx += 2;
         err += dx - (radius << 1);
       }
+    }
+  }
+}
+
+static void draw_filled_circle_vu(int _x, int _y, int radius, int r, int g, int b, int a)
+{
+  if (radius < 1)
+  {
+    return;
+  }
+
+  float iy = 0;
+  int intens = 0;
+  int inv_intens = 0;
+  int iiy = 0;
+  int cx = 0;
+  int cy = 0;
+  int last_iiy1 = 0;
+  int last_iiy2 = 0;
+  int last_iiy3 = 0;
+  int last_iiy4 = 0;
+  int first_x = (radius + 1) * cos(M_PI / 4);
+  int first_y = sqrt(radius * radius - first_x * first_x);
+  for (int x = first_x; x >= 0; x--)
+  {
+    iy = (float)sqrt(radius * radius - x * x);
+    intens = (int)((FPart(iy) * 255.0) * a / 255);
+    inv_intens = (255 - (int)(FPart(iy) * 255)) * a / 255;
+    iiy = IPart(iy);
+    cx = _x - x;
+    cy = _y + iiy;
+    mixpixel(cx, cy, r, g, b, inv_intens);
+    mixpixel(cx, cy + 1, r, g, b, intens);
+    cy = _y - iiy - 1;
+    mixpixel(cx, cy, r, g, b, intens);
+    mixpixel(cx, cy + 1, r, g, b, inv_intens);
+    cx = _x + x;
+    cy = _y + iiy;
+    mixpixel(cx, cy, r, g, b, inv_intens);
+    mixpixel(cx, cy + 1, r, g, b, intens);
+    cy = _y - iiy - 1;
+    mixpixel(cx, cy, r, g, b, intens);
+    mixpixel(cx, cy + 1, r, g, b, inv_intens);
+    cx = _x + iiy;
+    cy = _y + x;
+    mixpixel(cx, cy, r, g, b, inv_intens);
+    mixpixel(cx + 1, cy, r, g, b, intens);
+    cy = _y - x;
+    mixpixel(cx, cy, r, g, b, inv_intens);
+    mixpixel(cx + 1, cy, r, g, b, intens);
+    cx = _x - iiy - 1;
+    cy = _y + x;
+    mixpixel(cx, cy, r, g, b, intens);
+    mixpixel(cx + 1, cy, r, g, b, inv_intens);
+    cy = _y - x;
+    mixpixel(cx, cy, r, g, b, intens);
+    mixpixel(cx + 1, cy, r, g, b, inv_intens);
+    // Fill circle
+    if (_y + iiy != last_iiy1)
+    {
+      fill_mixed_line(_x - x, _x + x + 1, _y + iiy, r, g, b, a);
+      fill_mixed_line(_x - x, _x + x + 1, _y - iiy, r, g, b, a);
+      last_iiy1 = _y + iiy;
+    }
+    if (_y - x > _y - first_y && _y - x != last_iiy3)
+    {
+      last_iiy3 = _y - x;
+      fill_mixed_line(_x - iiy, _x + iiy + 1, _y - x, r, g, b, a);
+    }
+    if (x != 0 && _y + x < _y + first_y && _y + x != last_iiy4)
+    {
+      last_iiy4 = _y + x;
+      fill_mixed_line(_x - iiy, _x + iiy + 1, _y + x, r, g, b, a);
     }
   }
 }
