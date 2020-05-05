@@ -19,6 +19,7 @@ struct BufferInfo
   int width;
   int height;
   int channels;
+  bool premultiply_alpha;
   uint8_t *bytes;
   uint32_t src_size;
 };
@@ -131,19 +132,13 @@ static void record_mix_pixel(int i, float r, float g, float b, float a)
   recordtobuffer(i + 3, oa);
 }
 
-// static void record_empty_mix_pixel(int i, float r, float g, float b, float a)
-// {
-//   float ba = 0;
-//   a = a / 255.0;
-//   float oa = a + ba * (1 - a);
-//   r = getmixrgb(1, ba, r / 255.0, a, oa);
-//   g = getmixrgb(1, ba, g / 255.0, a, oa);
-//   b = getmixrgb(1, ba, b / 255.0, a, oa);
-//   recordtobuffer(i, r);
-//   recordtobuffer(i + 1, g);
-//   recordtobuffer(i + 2, b);
-//   recordtobuffer(i + 3, oa);
-// }
+static void record_premul_alpha_pixel(int i, unsigned short r, unsigned short g, unsigned short b, unsigned short a)
+{
+  buffer_info.bytes[i] = r * a >> 8;
+  buffer_info.bytes[i + 1] = g * a >> 8;
+  buffer_info.bytes[i + 2] = b * a >> 8;
+  buffer_info.bytes[i + 3] = a;
+}
 
 static void add_point(int x, int y)
 {
@@ -181,7 +176,7 @@ static void mixpixel(int x, int y, float r, float g, float b, float a)
   }
 
   int i = xytoi(x, y);
-  if (buffer_info.channels == 3 || buffer_info.bytes[i + 3] == 0 || a == 255)
+  if (buffer_info.channels == 3 || a == 255 || (!buffer_info.premultiply_alpha && buffer_info.bytes[i + 3] == 0))
   {
     record_pixel(i, r, g, b, a);
     return;
@@ -190,10 +185,10 @@ static void mixpixel(int x, int y, float r, float g, float b, float a)
   {
     return;
   }
-  // if (buffer_info.bytes[i + 3] == 0)
-  // {
-  //   record_empty_mix_pixel(i, r, g, b, a);
-  // }
+  if (buffer_info.premultiply_alpha && buffer_info.bytes[i + 3] == 0)
+  {
+    record_premul_alpha_pixel(i, r, g, b, a);
+  }
 
   record_mix_pixel(i, r, g, b, a);
 }
@@ -559,7 +554,8 @@ static void read_and_validate_buffer_info(lua_State *L, int index)
   lua_getfield(L, index, "width");
   lua_getfield(L, index, "height");
   lua_getfield(L, index, "channels");
-  dmScript::LuaHBuffer *lua_buffer = dmScript::CheckBuffer(L, -4);
+  lua_getfield(L, index, "premultiply_alpha");
+  dmScript::LuaHBuffer *lua_buffer = dmScript::CheckBuffer(L, -5);
   buffer_info.buffer = lua_buffer->m_Buffer;
 
   if (!dmBuffer::IsBufferValid(buffer_info.buffer))
@@ -573,22 +569,31 @@ static void read_and_validate_buffer_info(lua_State *L, int index)
     luaL_error(L, "Buffer is invalid");
   }
 
-  buffer_info.width = lua_tointeger(L, -3);
+  buffer_info.width = lua_tointeger(L, -4);
   if (buffer_info.width == 0)
   {
     luaL_error(L, "'width' of the buffer should be an integer and > 0");
   }
 
-  buffer_info.height = lua_tointeger(L, -2);
+  buffer_info.height = lua_tointeger(L, -3);
   if (buffer_info.height == 0)
   {
     luaL_error(L, "'height' of the buffer should be an integer and > 0");
   }
 
-  buffer_info.channels = lua_tointeger(L, -1);
+  buffer_info.channels = lua_tointeger(L, -2);
   if (buffer_info.channels == 0)
   {
     luaL_error(L, "'channels' of should be an integer and 3 or 4");
+  }
+
+  if (lua_isboolean(L, -1) == 1)
+  {
+    buffer_info.premultiply_alpha = lua_toboolean(L, -1);
+  }
+  else
+  {
+    buffer_info.premultiply_alpha = false;
   }
 }
 
@@ -1300,7 +1305,7 @@ static int stop_record_points_lua(lua_State *L)
 
 static int fill_area_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
   read_and_validate_buffer_info(L, 1);
   int32_t x = luaL_checknumber(L, 2);
   int32_t y = luaL_checknumber(L, 3);
@@ -1326,7 +1331,7 @@ static int fill_area_lua(lua_State *L)
 
 static int draw_triangle_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t x0 = luaL_checknumber(L, 2);
@@ -1355,7 +1360,7 @@ static int draw_triangle_lua(lua_State *L)
 
 static int draw_line_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t x0 = luaL_checknumber(L, 2);
@@ -1400,7 +1405,7 @@ static int draw_line_lua(lua_State *L)
 
 static int draw_gradient_line_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t x0 = luaL_checknumber(L, 2);
@@ -1457,7 +1462,7 @@ static int draw_gradient_line_lua(lua_State *L)
 
 static int draw_arc_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
@@ -1483,7 +1488,7 @@ static int draw_arc_lua(lua_State *L)
 
 static int draw_filled_arc_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
@@ -1516,7 +1521,7 @@ static int draw_filled_arc_lua(lua_State *L)
 
 static int draw_gradient_arc_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
@@ -1565,7 +1570,7 @@ static int draw_gradient_arc_lua(lua_State *L)
 
 static int draw_circle_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
@@ -1609,7 +1614,7 @@ static int draw_circle_lua(lua_State *L)
 
 static int draw_filled_circle_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
@@ -1644,7 +1649,7 @@ static int draw_filled_circle_lua(lua_State *L)
 
 static int fill_texture_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   uint8_t r = luaL_checknumber(L, 2);
@@ -1678,7 +1683,7 @@ static int fill_texture_lua(lua_State *L)
 
 static int draw_rect_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
@@ -1729,7 +1734,7 @@ bool sort_coords(const Point &p1, const Point &p2)
 
 static int draw_filled_rect_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t posx = luaL_checknumber(L, 2);
@@ -1792,7 +1797,7 @@ static int draw_filled_rect_lua(lua_State *L)
 
 static int draw_pixel_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t x = luaL_checknumber(L, 2);
@@ -1814,7 +1819,7 @@ static int draw_pixel_lua(lua_State *L)
 
 static int read_color_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t x = luaL_checknumber(L, 2);
@@ -1840,7 +1845,7 @@ static int read_color_lua(lua_State *L)
 
 static int draw_bezier_lua(lua_State *L)
 {
-  int top = lua_gettop(L) + 4;
+  int top = lua_gettop(L) + 5;
 
   read_and_validate_buffer_info(L, 1);
   int32_t x0 = luaL_checknumber(L, 2);

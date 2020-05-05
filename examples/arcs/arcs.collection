@@ -22,7 +22,7 @@ embedded_instances {
   "  type: \"sprite\"\n"
   "  data: \"tile_set: \\\"/examples/full.atlas\\\"\\n"
   "default_animation: \\\"fullscreen512\\\"\\n"
-  "material: \\\"/examples/sprite.material\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
   "blend_mode: BLEND_MODE_ALPHA\\n"
   "\"\n"
   "  position {\n"

@@ -23,6 +23,7 @@ First of all you need to create a table with a buffer information that contain n
 `width` - buffer width, same as your texture width<br />
 `height` - buffer height, same as your texture height<br />
 `channels` - 3 for rgb, 4 for rgba<br />
+`premultiply_alpha` - alpha value will be premultiplied into the RGB color values. Optional parameter. Default is false.<br />
 
 For example:
 ```lua
@@ -35,7 +36,8 @@ local buffer_info = {
     }}),
     width = 1024,
     height = 2048,
-    channels = 4
+    channels = 4,
+    premultiply_alpha = true
   }
 ```
 Then when you have a buffer info, you can use next methods:
