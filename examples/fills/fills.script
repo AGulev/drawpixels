@@ -1,0 +1,32 @@
+function init(self)
+  msg.post("@render:", "clear_color", {color = vmath.vector4(1, 1, 1, 1)})
+  -- size of texture when scaled to nearest power of two
+  local width = 512
+  local height = 512
+  local channels = 4
+
+  self.resource_path = go.get("#sprite", "texture0")
+
+  self.buffer_info = {
+    buffer = buffer.create(width * height, {{name = hash("rgba"), type = buffer.VALUE_TYPE_UINT8, count = channels}}),
+    width = width,
+    height = height,
+    channels = channels
+  }
+
+  self.header = {width = width, height = height, type = resource.TEXTURE_TYPE_2D, format = resource.TEXTURE_FORMAT_RGBA, num_mip_maps = 1}
+  drawpixels.fill(self.buffer_info, 255, 255, 0, 255)
+
+  drawpixels.start_fill()
+  drawpixels.line(self.buffer_info, 20, 20, 500, 20, 255, 0, 0, 255, true)
+  drawpixels.line(self.buffer_info, 500, 20, 400, 358, 255, 0, 0, 255, true)
+  drawpixels.line(self.buffer_info, 400, 358, 500, 500, 255, 0, 0, 255, true)
+  drawpixels.line(self.buffer_info, 500, 500, 258, 453, 255, 0, 0, 255, true)
+  drawpixels.line(self.buffer_info, 258, 453, 20, 20, 255, 0, 0, 255, true)
+  -- drawpixels.line(self.buffer_info,10, 250, 510, 250, 255, 0, 0, 255, true)
+  drawpixels.circle(self.buffer_info, 200, 200, 100, 0, 255, 255, 255, true)
+  drawpixels.arc(self.buffer_info, width / 2, width / 2, width * 0.4, -20 * math.pi / 180, -50 * math.pi / 180, 0, 255, 0, 255)
+  drawpixels.fill_area(self.buffer_info, 300, 300, 255, 0, 0, 255)
+  drawpixels.end_fill()
+  resource.set_texture(self.resource_path, self.header, self.buffer_info.buffer)
+end
