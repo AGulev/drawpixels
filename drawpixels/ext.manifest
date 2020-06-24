@@ -1,1 +1,47 @@
 name: "DrawPixels"
+
+platforms:
+    x86_64-osx:
+        context:
+            flags: ["-std=c++11"]
+
+    x86_64-linux:
+        context:
+            flags: ["-std=c++11"]
+
+    js-web:
+        context:
+            flags: ["-std=c++11"]
+
+    wasm-web:
+        context:
+            flags: ["-std=c++11"]
+
+    x86-win32:
+        context:
+            flags: ["-std=c++11"]
+
+    x86_64-win32:
+        context:
+            flags: ["-std=c++11"]
+
+    armv7-android:
+        context:
+            flags: ["-std=c++11"]
+
+    arm64-android:
+        context:
+            flags: ["-std=c++11"]
+
+    armv7-ios:
+        context:
+            flags: ["-std=c++11"]
+
+    arm64-ios:
+        context:
+            flags: ["-std=c++11"]
+
+    x86_64-ios:
+        context:
+            flags: ["-std=c++11"]
+
