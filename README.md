@@ -7,7 +7,7 @@
 Feel free to contribute!
 
 >Please, pay attension!
-The size of the image you manipulate with DrawPixels must match that of the atlas, not the sprite image. Otherwise you need to know where in the atlas the sprite exists and update that region of the atlas.
+The size of the image you manipulate with DrawPixels must match that of the atlas, not the sprite image. Otherwise you need to know where the sprite is the atlas and update that region of the atlas.
 
 ## Installation
 
