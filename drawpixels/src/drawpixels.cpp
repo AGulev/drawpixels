@@ -1,8 +1,9 @@
 // Extension lib defines
 #define LIB_NAME "DrawPixels"
 #define MODULE_NAME "drawpixels"
-
+#ifndef DLIB_LOG_DOMAIN
 #define DLIB_LOG_DOMAIN LIB_NAME
+#endif
 #define M_PI 3.14159265358979323846
 
 #include <dmsdk/sdk.h>
