@@ -10,11 +10,10 @@ Feel free to contribute!
 The size of the image you manipulate with DrawPixels must match that of the atlas, not the sprite image. Otherwise you need to know where the sprite is the atlas and update that region of the atlas.
 
 ## Installation
+To use this library in your Defold project, add the needed version URL to your `game.project` dependencies from [Releases](https://github.com/AGulev/drawpixels/releases)
 
-You can use the Draw Pixels extension in your own project by adding this project as a [Defold library dependency](http://www.defold.com/manuals/libraries/).
-Open your game.project file and in the dependencies field under project add:
+<img width="401" alt="image" src="https://user-images.githubusercontent.com/2209596/202223571-c77f0304-5202-4314-869d-7a90bbeec5ec.png">
 
->https://github.com/AGulev/drawpixels/archive/master.zip
 
 ## Example
 ![screenshot](https://user-images.githubusercontent.com/2209596/45321616-7f24e100-b54e-11e8-9821-00b1b2e36a97.jpg)
