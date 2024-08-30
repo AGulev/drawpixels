@@ -1,5 +1,7 @@
 # Draw Pixels
 
+[![Build Status](https://github.com/AGulev/drawpixels/workflows/Build%20with%20bob/badge.svg)](https://github.com/AGulev/drawpixels/actions)
+
 ![15f0e5a685b5c7f16ef78f612c377e4cab08ce8a](https://github.com/user-attachments/assets/4c9d1ead-74e2-4675-ab51-a9ddf63c15da)
 
 [Defold engine](http://www.defold.com) native extension for drawing pixels and simple geometry into texture buffer.
