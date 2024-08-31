@@ -1,39 +1,34 @@
 name: Build with bob
 
-on:
-  push:
-  pull_request_target:
-  schedule:
-    # nightly at 05:00 on the 1st and 15th
-    - cron: 0 5 1,15 * *
+on: [push, pull_request]
 
 env:
   VERSION_FILENAME: 'info.json'
-  BUILD_SERVER: 'https://build.defold.com'
+  CHANNEL: 'beta'
+  BUILD_SERVER: 'https://build-stage.defold.com'
 
 jobs:
   build_with_bob:
     strategy:
       matrix:
-        platform: [armv7-android, x86_64-linux, x86_64-win32, x86-win32, js-web]
+        platform: [armv7-android, arm64-android, x86_64-linux, x86_64-win32, x86-win32, js-web]
     runs-on: ubuntu-latest
 
     name: Build
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
-        with:
-          java-version: '11.0.2'
+      - uses: actions/setup-java@v3
+        with: { java-version: '17.0.5+8', distribution: 'temurin'}
 
       - name: Get Defold version
         run: |
-          TMPVAR=`curl -s http://d.defold.com/stable/${{env.VERSION_FILENAME}} | jq -r '.sha1'`
+          TMPVAR=`curl -s http://d.defold.com/${{env.CHANNEL}}/${{env.VERSION_FILENAME}} | jq -r '.sha1'`
           echo "DEFOLD_VERSION=${TMPVAR}" >> $GITHUB_ENV
           echo "Found version ${TMPVAR}"
 
       - name: Download bob.jar
         run: |
-          wget -q http://d.defold.com/archive/stable/${{env.DEFOLD_VERSION}}/bob/bob.jar
+          wget -q http://d.defold.com/archive/${{env.CHANNEL}}/${{env.DEFOLD_VERSION}}/bob/bob.jar
           java -jar bob.jar --version
 
       - name: Resolve libraries
@@ -47,25 +42,24 @@ jobs:
   build_with_bob_macos:
     strategy:
       matrix:
-        platform: [armv7-darwin, x86_64-darwin]
+        platform: [arm64-ios, x86_64-darwin]
     runs-on: macOS-latest
 
     name: Build
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
-        with:
-          java-version: '11.0.2'
+      - uses: actions/setup-java@v3
+        with: { java-version: '17.0.5+8', distribution: 'temurin'}
 
       - name: Get Defold version
         run: |
-          TMPVAR=`curl -s http://d.defold.com/stable/${{env.VERSION_FILENAME}} | jq -r '.sha1'`
+          TMPVAR=`curl -s http://d.defold.com/${{env.CHANNEL}}/${{env.VERSION_FILENAME}} | jq -r '.sha1'`
           echo "DEFOLD_VERSION=${TMPVAR}" >> $GITHUB_ENV
           echo "Found version ${TMPVAR}"
 
       - name: Download bob.jar
         run: |
-          wget -q http://d.defold.com/archive/stable/${{env.DEFOLD_VERSION}}/bob/bob.jar
+          wget -q http://d.defold.com/archive/${{env.CHANNEL}}/${{env.DEFOLD_VERSION}}/bob/bob.jar
           java -jar bob.jar --version
 
       - name: Resolve libraries
