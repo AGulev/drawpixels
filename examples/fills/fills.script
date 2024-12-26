@@ -4,7 +4,7 @@ function init(self)
   local width = 512
   local height = 512
   local channels = 4
-
+  
   self.resource_path = go.get("#sprite", "texture0")
 
   self.buffer_info = {

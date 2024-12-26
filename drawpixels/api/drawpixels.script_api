@@ -1,0 +1,344 @@
+- name: drawpixels
+  type: table
+  desc: Functions and constants for interacting with DrawPixels extension
+
+  members:
+
+  - name: start_fill
+    type: function
+    desc: Indicates border should be maintained
+    parameters:
+
+  - name: end_fill
+    type: function
+    desc: Stop border recordin
+
+    parameters:
+
+  - name: fill_area
+    type: function
+    desc: Fills the area considering the boundaries
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x
+      type: number
+    - name: y
+      type: number
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+
+  - name: circle
+    type: function
+    desc: Method for drawing circle
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: pox_x
+      type: table
+    - name: pox_y
+      type: table
+    - name: diameter
+      type: table
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+    - name: antialiasing
+      type: table
+    - name: width
+      type: number
+
+  - name: filled_circle
+    type: function
+    desc: Method for drawing filled circle
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: pos_x
+      type: table
+    - name: pos_y
+      type: table
+    - name: diameter
+      type: table
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+    - name: antialiasing
+      type: table
+
+  - name: rect
+    type: function
+    desc: Method for drawing rectangle
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: pos_x
+      type: table
+    - name: pos_y
+      type: table
+    - name: rect_width
+      type: table
+    - name: rect_height
+      type: table
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+
+  - name: filled_rect
+    type: function
+    desc: Method for drawing filled rectangle
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: pos_x
+      type: table
+    - name: pos_y
+      type: table
+    - name: rect_width
+      type: table
+    - name: rect_height
+      type: table
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+    - name: angle
+      type: table
+
+  - name: fill
+    type: function
+    desc: Fill buffer with the color
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+
+  - name: line
+    type: function
+    desc: Draw a line between two points
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x0
+      type: number
+    - name: y0
+      type: number
+    - name: x1
+      type: number
+    - name: y1
+      type: number
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+    - name: antialiasing
+      type: table
+    - name: width
+      type: number
+
+  - name: gradient_line
+    type: function
+    desc: Draw a gradient line between two points
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x0
+      type: number
+    - name: y0
+      type: number
+    - name: x1
+      type: number
+    - name: y1
+      type: number
+    - name: red1
+      type: number
+    - name: green1
+      type: number
+    - name: blue1
+      type: number
+    - name: red2
+      type: number
+    - name: green2
+      type: number
+    - name: blue2
+      type: number
+    - name: alpha
+      type: number
+    - name: antialiasing
+      type: table
+    - name: width
+      type: number
+
+  - name: arc
+    type: function
+    desc: Draw a arc between two corners
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x
+      type: number
+    - name: y
+      type: number
+    - name: radius
+      type: number
+    - name: from
+      type: number
+    - name: to
+      type: number
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+
+  - name: filled_arc
+    type: function
+    desc: Draw a filled arc between two corners
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x
+      type: number
+    - name: y
+      type: number
+    - name: radius
+      type: number
+    - name: from
+      type: number
+    - name: to
+      type: number
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+
+  - name: gradient_arc
+    type: function
+    desc: Draw a gradient arc between two corners
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x
+      type: number
+    - name: y
+      type: number
+    - name: radius
+      type: number
+    - name: from
+      type: number
+    - name: to
+      type: number
+    - name: red1
+      type: number
+    - name: green1
+      type: number
+    - name: blue1
+      type: number
+    - name: red2
+      type: number
+    - name: green2
+      type: number
+    - name: blue2
+      type: number
+    - name: alpha
+      type: number
+
+  - name: pixel
+    type: function
+    desc: Draw a pixel
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x
+      type: number
+    - name: y
+      type: number
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number
+
+  - name: color
+    type: function
+    desc: Read color from a position in the buffer
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x
+      type: number
+    - name: y
+      type: number
+
+  - name: bezier
+    type: function
+    desc: Draw a bezier line between two points and one control point
+    parameters:
+    - name: buffer_info
+      type: table
+    - name: x0
+      type: number
+    - name: y0
+      type: number
+    - name: xc
+      type: number
+    - name: yc
+      type: number
+    - name: x1
+      type: number
+    - name: y1
+      type: number
+    - name: red
+      type: number
+    - name: green
+      type: number
+    - name: blue
+      type: number
+    - name: alpha
+      type: number

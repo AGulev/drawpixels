@@ -5,7 +5,7 @@ drawpixels = {}
 ---Indicates border should be maintained:
 function drawpixels.start_fill() end
 ---Stop border recording:
-function drawpixels.stop_fill() end
+function drawpixels.end_fill() end
 ---Fills the area considering the boundaries:
 function drawpixels.fill_area(buffer_info, x,y, red, green, blue, alpha) end
 ---Method for drawing circle:
