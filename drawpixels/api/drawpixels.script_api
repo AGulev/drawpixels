@@ -342,3 +342,26 @@
       type: number
     - name: alpha
       type: number
+
+  - name: copy_pixels
+    type: function
+    desc: Copy a rectangular region of pixels from one buffer to another with optional alpha blending
+    parameters:
+    - name: dest_buffer
+      type: table
+    - name: src_buffer
+      type: table
+    - name: rect_x
+      type: number
+    - name: rect_y
+      type: number
+    - name: rect_width
+      type: number
+    - name: rect_height
+      type: number
+    - name: dest_x
+      type: number
+    - name: dest_y
+      type: number
+    - name: merge_alpha
+      type: boolean
