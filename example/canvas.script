@@ -1,3 +1,5 @@
+local draw_examples = require "example.draw_examples"
+
 function init(self)
     msg.post("@render:", "clear_color", {color = vmath.vector4(1, 1, 1, 1)})
     -- size of texture when scaled to nearest power of two
@@ -26,6 +28,7 @@ function init(self)
         num_mip_maps = 1
     }
     self.rotation = 0
+    self.draw_examples_index = 0
 end
 
 function update(self, dt)
@@ -52,6 +55,15 @@ function on_message(self, message_id, message, sender)
         self.last_pos = {}
     elseif message_id == hash("clear") then
         drawpixels.fill(self.buffer_info, 0, 0, 0, 0)
+        self.dirty = true
+    elseif message_id == hash("draw_examples") then
+        self.draw_examples_index = self.draw_examples_index + 1
+        if self.draw_examples_index > draw_examples.count() then
+            drawpixels.fill(self.buffer_info, 0, 0, 0, 0)
+            self.draw_examples_index = 0
+        else
+            draw_examples.draw_step(self.buffer_info, self.draw_examples_index)
+        end
         self.dirty = true
     end
 end

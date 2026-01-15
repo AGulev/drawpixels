@@ -278,6 +278,25 @@ static void fill_line(int fromx, int tox, int y, int r, int g, int b, int a)
     delete[] line;
 }
 
+static void fill_line_gradient(int fromx, int tox, int y, Point center, int fd_2, Color c1, Color c2, int a)
+{
+    if (fromx > tox)
+    {
+        int temp = fromx;
+        fromx = tox;
+        tox = temp;
+    }
+    fromx = fmax(0, fromx);
+    tox = fmin(buffer_info.width - 1, tox);
+    Point pixel;
+    pixel.y = y;
+    for (int x = fromx; x <= tox; x++)
+    {
+        pixel.x = x;
+        lerp_pixel(center, pixel, fd_2, c1, c2, a);
+    }
+}
+
 static bool is_contain(int x, int y)
 {
     return points[y * buffer_info.width + x] == 1;
@@ -510,6 +529,20 @@ static void fill_bottom_flat_triangle(int x1, int y1, int x2, int y2, int x3, in
     }
 }
 
+static void fill_bottom_flat_triangle_gradient(int x1, int y1, int x2, int y2, int x3, int y3, Point center, int fd_2, Color c1, Color c2, int a)
+{
+    float invslope1 = float(x2 - x1) / float(y2 - y1);
+    float invslope2 = float(x3 - x1) / float(y3 - y1);
+    float curx1 = x1;
+    float curx2 = x1;
+    for (int scanlineY = y1; scanlineY <= y2; scanlineY++)
+    {
+        fill_line_gradient((int)curx1, (int)curx2, scanlineY, center, fd_2, c1, c2, a);
+        curx1 += invslope1;
+        curx2 += invslope2;
+    }
+}
+
 static void fill_top_flat_triangle(int x1, int y1, int x2, int y2, int x3, int y3, int r, int g, int b, int a)
 {
     float invslope1 = float(x3 - x1) / float(y3 - y1);
@@ -519,6 +552,20 @@ static void fill_top_flat_triangle(int x1, int y1, int x2, int y2, int x3, int y
     for (int scanlineY = y3; scanlineY > y1; scanlineY--)
     {
         fill_line(curx1, curx2, scanlineY, r, g, b, a);
+        curx1 -= invslope1;
+        curx2 -= invslope2;
+    }
+}
+
+static void fill_top_flat_triangle_gradient(int x1, int y1, int x2, int y2, int x3, int y3, Point center, int fd_2, Color c1, Color c2, int a)
+{
+    float invslope1 = float(x3 - x1) / float(y3 - y1);
+    float invslope2 = float(x3 - x2) / float(y3 - y2);
+    float curx1 = x3;
+    float curx2 = x3;
+    for (int scanlineY = y3; scanlineY > y1; scanlineY--)
+    {
+        fill_line_gradient((int)curx1, (int)curx2, scanlineY, center, fd_2, c1, c2, a);
         curx1 -= invslope1;
         curx2 -= invslope2;
     }
@@ -546,6 +593,67 @@ static void draw_triangle(int x1, int y1, int x2, int y2, int x3, int y3, int r,
         fill_bottom_flat_triangle(x1, y1, x2, y2, x4, y4, r, g, b, a);
         fill_top_flat_triangle(x2, y2, x4, y4, x3, y3, r, g, b, a);
     }
+}
+
+static void draw_triangle_gradient(int x1, int y1, int x2, int y2, int x3, int y3, Point center, int fd_2, Color c1, Color c2, int a)
+{
+    /* values should be sorted by y */
+    /* here we know that y1 <= y2 <= y3 */
+    if (y2 == y3)
+    {
+        fill_bottom_flat_triangle_gradient(x1, y1, x2, y2, x3, y3, center, fd_2, c1, c2, a);
+    }
+    else if (y1 == y2)
+    {
+        fill_top_flat_triangle_gradient(x1, y1, x2, y2, x3, y3, center, fd_2, c1, c2, a);
+    }
+    else
+    {
+        int x4 = x1 + ((float(y2 - y1) / float(y3 - y1)) * (x3 - x1));
+        int y4 = y2;
+        fill_bottom_flat_triangle_gradient(x1, y1, x2, y2, x4, y4, center, fd_2, c1, c2, a);
+        fill_top_flat_triangle_gradient(x2, y2, x4, y4, x3, y3, center, fd_2, c1, c2, a);
+    }
+}
+
+static void draw_triangle_unsorted(int x1, int y1, int x2, int y2, int x3, int y3, int r, int g, int b, int a)
+{
+    if (y1 > y2)
+    {
+        std::swap(y1, y2);
+        std::swap(x1, x2);
+    }
+    if (y1 > y3)
+    {
+        std::swap(y1, y3);
+        std::swap(x1, x3);
+    }
+    if (y2 > y3)
+    {
+        std::swap(y2, y3);
+        std::swap(x2, x3);
+    }
+    draw_triangle(x1, y1, x2, y2, x3, y3, r, g, b, a);
+}
+
+static void draw_triangle_gradient_unsorted(int x1, int y1, int x2, int y2, int x3, int y3, Point center, int fd_2, Color c1, Color c2, int a)
+{
+    if (y1 > y2)
+    {
+        std::swap(y1, y2);
+        std::swap(x1, x2);
+    }
+    if (y1 > y3)
+    {
+        std::swap(y1, y3);
+        std::swap(x1, x3);
+    }
+    if (y2 > y3)
+    {
+        std::swap(y2, y3);
+        std::swap(x2, x3);
+    }
+    draw_triangle_gradient(x1, y1, x2, y2, x3, y3, center, fd_2, c1, c2, a);
 }
 
 static void read_and_validate_buffer_info(lua_State *L, int index)
@@ -1497,6 +1605,8 @@ static int draw_filled_arc_lua(lua_State *L)
     int32_t radius = luaL_checknumber(L, 4);
     float from = luaL_checknumber(L, 5);
     float to = luaL_checknumber(L, 6);
+    float orig_from = from;
+    float orig_to = to;
     uint32_t r = luaL_checknumber(L, 7);
     uint32_t g = luaL_checknumber(L, 8);
     uint32_t b = luaL_checknumber(L, 9);
@@ -1505,16 +1615,50 @@ static int draw_filled_arc_lua(lua_State *L)
     {
         a = luaL_checknumber(L, 10);
     }
-    start_record_points();
+    if (fabs(orig_from - orig_to) >= PI_2)
+    {
+        draw_filled_circle(posx, posy, radius * 2, r, g, b, a);
+        assert(top == lua_gettop(L));
+        return 0;
+    }
+
     draw_normalized_arc(posx, posy, radius, from, to, r, g, b, a);
     draw_arc_lines(posx, posy, radius, from, to, r, g, b, a);
 
-    float center = (from + to) / 2;
-    center = from > to ? center - M_PI / 2 : center + M_PI / 2;
+    float start = from;
+    float end = to;
+    if (end < start)
+    {
+        end += PI_2;
+    }
+    float span = end - start;
+    if (span > 0.0f)
+    {
+        int segments = (int)ceilf(span * radius);
+        if (segments < 2)
+        {
+            segments = 2;
+        }
+        float step = span / (float)segments;
+        float prev = start;
+        for (int i = 1; i <= segments; i++)
+        {
+            float curr = start + step * i;
+            float px1 = posx + radius * cos(prev + M_PI / 2);
+            float py1 = posy + radius * sin(prev + M_PI / 2);
+            float px2 = posx + radius * cos(curr + M_PI / 2);
+            float py2 = posy + radius * sin(curr + M_PI / 2);
+            draw_triangle_unsorted(posx, posy, (int)roundf(px1), (int)roundf(py1), (int)roundf(px2), (int)roundf(py2), r, g, b, a);
+            prev = curr;
+        }
+    }
 
-    fill_area(posx + radius * 2 / 3 * cos(center), posy + radius * 2 / 3 * sin(center), r, g, b, a);
-    stop_record_points();
-    draw_line_vu(posx, posy, posx + radius * 2 / 3 * cos(center), posy + radius * 2 / 3 * sin(center), r, g, b, a, 2);
+    float center = start + span / 2.0f;
+    if (center >= PI_2)
+    {
+        center -= PI_2;
+    }
+    draw_line_vu(posx, posy, posx + radius * 2 / 3 * cos(center + M_PI / 2), posy + radius * 2 / 3 * sin(center + M_PI / 2), r, g, b, a, 2);
 
     assert(top == lua_gettop(L));
     return 0;
@@ -1530,6 +1674,8 @@ static int draw_gradient_arc_lua(lua_State *L)
     int32_t radius = luaL_checknumber(L, 4);
     float from = luaL_checknumber(L, 5);
     float to = luaL_checknumber(L, 6);
+    float orig_from = from;
+    float orig_to = to;
     uint32_t r1 = luaL_checknumber(L, 7);
     uint32_t g1 = luaL_checknumber(L, 8);
     uint32_t b1 = luaL_checknumber(L, 9);
@@ -1550,20 +1696,53 @@ static int draw_gradient_arc_lua(lua_State *L)
     c2.r = r2;
     c2.g = g2;
     c2.b = b2;
-    start_record_points();
     draw_normalized_arc(posx, posy, radius, from, to, r2, g2, b2, a);
     draw_gradient_arc_lines(posx, posy, radius, from, to, c1, c2, a);
-
-    float center = (from + to) / 2;
-    center = from > to ? center - M_PI / 2 : center + M_PI / 2;
 
     Point center_point;
     center_point.x = posx;
     center_point.y = posy;
 
-    gradient_fill_area(posx + radius * 2 / 3 * cos(center), posy + radius * 2 / 3 * sin(center), center_point, radius * radius, c1, c2, a);
-    stop_record_points();
-    draw_gradient_line_vu(posx, posy, posx + radius * 2 / 2.05 * cos(center), posy + radius * 2 / 2.05 * sin(center), c1, c2, a, 1);
+    float start = from;
+    float end = to;
+    if (fabs(orig_from - orig_to) >= PI_2)
+    {
+        start = from;
+        end = from + PI_2;
+    }
+    else if (end < start)
+    {
+        end += PI_2;
+    }
+    float span = end - start;
+    if (span > 0.0f)
+    {
+        int segments = (int)ceilf(span * radius);
+        if (segments < 2)
+        {
+            segments = 2;
+        }
+        float step = span / (float)segments;
+        float prev = start;
+        for (int i = 1; i <= segments; i++)
+        {
+            float curr = start + step * i;
+            float px1 = posx + radius * cos(prev + M_PI / 2);
+            float py1 = posy + radius * sin(prev + M_PI / 2);
+            float px2 = posx + radius * cos(curr + M_PI / 2);
+            float py2 = posy + radius * sin(curr + M_PI / 2);
+            draw_triangle_gradient_unsorted(posx, posy, (int)roundf(px1), (int)roundf(py1), (int)roundf(px2), (int)roundf(py2),
+                                            center_point, radius * radius, c1, c2, a);
+            prev = curr;
+        }
+    }
+
+    float center = start + span / 2.0f;
+    if (center >= PI_2)
+    {
+        center -= PI_2;
+    }
+    draw_gradient_line_vu(posx, posy, posx + radius * 2 / 2.05 * cos(center + M_PI / 2), posy + radius * 2 / 2.05 * sin(center + M_PI / 2), c1, c2, a, 1);
 
     assert(top == lua_gettop(L));
     return 0;

@@ -46,6 +46,10 @@ local function clear()
   msg.post("canvas", "clear")
 end
 
+local function draw_examples()
+  msg.post("canvas", "draw_examples")
+end
+
 function init(self)
   msg.post("canvas", "acquire_input_focus")
   msg.post("gui", "acquire_input_focus")
@@ -62,6 +66,7 @@ function init(self)
   self.nodes[gui.get_node("line")] = use_line
   self.nodes[gui.get_node("colorpicker")] = use_colorpicker
   self.nodes[gui.get_node("bezier")] = use_bezier
+  self.nodes[gui.get_node("btn_draw")] = draw_examples
   for i = 1, 10 do
     self.nodes[gui.get_node("color" .. i)] = pick_color
   end
