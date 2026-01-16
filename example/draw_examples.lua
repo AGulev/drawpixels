@@ -115,7 +115,7 @@ local steps = {
         local s = p.slots[10]
         local arc_start = 10 / 6 * math.pi
         local arc_finish = 5 / 2 * math.pi
-        drawpixels.filled_arc(buffer_info, s.x, s.y, 55, arc_start, arc_finish, 0, 0, 255, 255)
+        drawpixels.filled_arc(buffer_info, s.x, s.y, 55, arc_start, arc_finish, 0, 0, 255, 128)
     end,
     function(buffer_info)
         local p = positions(buffer_info)

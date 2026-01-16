@@ -1653,13 +1653,6 @@ static int draw_filled_arc_lua(lua_State *L)
         }
     }
 
-    float center = start + span / 2.0f;
-    if (center >= PI_2)
-    {
-        center -= PI_2;
-    }
-    draw_line_vu(posx, posy, posx + radius * 2 / 3 * cos(center + M_PI / 2), posy + radius * 2 / 3 * sin(center + M_PI / 2), r, g, b, a, 2);
-
     assert(top == lua_gettop(L));
     return 0;
 }
@@ -1736,13 +1729,6 @@ static int draw_gradient_arc_lua(lua_State *L)
             prev = curr;
         }
     }
-
-    float center = start + span / 2.0f;
-    if (center >= PI_2)
-    {
-        center -= PI_2;
-    }
-    draw_gradient_line_vu(posx, posy, posx + radius * 2 / 2.05 * cos(center + M_PI / 2), posy + radius * 2 / 2.05 * sin(center + M_PI / 2), c1, c2, a, 1);
 
     assert(top == lua_gettop(L));
     return 0;
