@@ -37,6 +37,4 @@ images {
 images {
   image: "/example/images/bezier.png"
 }
-margin: 0
 extrude_borders: 2
-inner_padding: 0

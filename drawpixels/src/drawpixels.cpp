@@ -27,6 +27,7 @@ struct BufferInfo
 
 BufferInfo buffer_info;
 
+
 struct Point
 {
     int x;
